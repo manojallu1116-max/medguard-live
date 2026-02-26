@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const PosDashboard = () => {
   const [patientPhone, setPatientPhone] = useState('');
   const [medicines, setMedicines] = useState([
     { name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }
   ]);
+  const [isSyncing, setIsSyncing] = useState(false); // Added a loading state!
 
   const dosagePresets = ["1-0-1", "1-1-1", "1-0-0", "0-0-1", "0-1-0"];
 
@@ -64,15 +66,28 @@ const PosDashboard = () => {
 
     const syncPayload = {
       patient_phone: patientPhone,
-      shop_id: "medguard_partner_001",
+      shop_id: "MG-001",
       medicines: payloadMedicines
     };
 
-    console.log("SENDING TO BACKEND:", JSON.stringify(syncPayload, null, 2));
-    alert("Success! Bill Printed. Open your browser console to see the JSON payload synced to the backend.");
-    
-    setPatientPhone('');
-    setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }]);
+    setIsSyncing(true);
+
+    try {
+      // THE MAGIC CONNECTION: Send data to Node.js backend
+      const response = await axios.post('http://localhost:5000/api/sync/print-bill', syncPayload);
+      
+      console.log("BACKEND RESPONSE:", response.data);
+      alert("✅ Success! Bill Printed and securely synced to the Patient's App in the cloud.");
+      
+      // Reset form on success
+      setPatientPhone('');
+      setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }]);
+    } catch (error) {
+      console.error("Sync Error:", error);
+      alert("❌ Failed to sync to cloud. Is your Node.js server running on port 5000?");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const totalBill = medicines.reduce((sum, med) => sum + (parseFloat(med.price) || 0), 0);
@@ -153,8 +168,12 @@ const PosDashboard = () => {
             <p className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-1">Grand Total</p>
             <p className="text-5xl font-mono font-bold text-emerald-600">₹{totalBill.toFixed(2)}</p>
           </div>
-          <button onClick={handlePrintBill} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-xl font-bold text-xl shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
-            <span className="text-2xl">🖨️</span> Print & Sync App
+          <button 
+            onClick={handlePrintBill} 
+            disabled={isSyncing}
+            className={`text-white px-10 py-5 rounded-xl font-bold text-xl shadow-xl transition transform flex items-center gap-3 ${isSyncing ? 'bg-slate-400 cursor-not-allowed opacity-80' : 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-1 active:translate-y-0 shadow-blue-600/30'}`}
+          >
+            <span className="text-2xl">{isSyncing ? "⏳" : "🖨️"}</span> {isSyncing ? "Syncing to Cloud..." : "Print & Sync App"}
           </button>
         </div>
       </footer>

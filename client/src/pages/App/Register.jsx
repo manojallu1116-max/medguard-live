@@ -1,83 +1,51 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    language: 'Telugu',
-    isDonor: false,
-    bloodGroup: ''
+    name: '', phone: '', password: '', familyPin: '', language: 'Telugu', bloodGroup: 'O+', isDonor: false
   });
 
-  const handleRegister = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registration Data Payload:", formData);
-    alert("Account Created! Routing to Patient Dashboard...");
-    navigate('/patient');
+    if (formData.familyPin.length !== 4) return alert("Family PIN must be exactly 4 digits.");
+    setIsLoading(true);
+    try {
+      await axios.post('http://localhost:5000/api/auth/register', formData);
+      alert("✅ Registration Successful!");
+      navigate('/'); 
+    } catch (error) {
+      alert(error.response?.data?.message || "Registration failed.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        <h1 className="text-3xl font-bold text-slate-800 text-center mb-2">Join MedGuard</h1>
-        <p className="text-slate-500 text-center mb-8">Set up your automated care profile.</p>
-
-        <form onSubmit={handleRegister} className="space-y-5">
-          <div>
-            <label className="block text-slate-700 font-bold mb-1">Full Name</label>
-            <input type="text" required className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-              onChange={e => setFormData({...formData, name: e.target.value})} />
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-lg">
+        <h1 className="text-3xl font-bold text-center text-slate-800 mb-8">Join MedGuard</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="text" placeholder="Full Name" required className="w-full p-3 border rounded-xl" onChange={e => setFormData({...formData, name: e.target.value})} />
+          <div className="grid grid-cols-2 gap-4">
+            <input type="tel" placeholder="Phone Number" required className="w-full p-3 border rounded-xl" onChange={e => setFormData({...formData, phone: e.target.value})} />
+            <input type="password" placeholder="Login Password" required className="w-full p-3 border rounded-xl" onChange={e => setFormData({...formData, password: e.target.value})} />
           </div>
-
-          <div>
-            <label className="block text-slate-700 font-bold mb-1">Phone Number (QR ID)</label>
-            <input type="tel" required className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono" 
-              onChange={e => setFormData({...formData, phone: e.target.value})} />
+          {/* 🔒 NEW FAMILY PIN INPUT */}
+          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <label className="block text-blue-800 font-bold mb-1 text-sm">Secret Family Access PIN</label>
+            <p className="text-xs text-blue-600 mb-2">Share this 4-digit code with relatives so they can monitor your health.</p>
+            <input type="text" maxLength="4" placeholder="e.g. 1234" required className="w-full p-3 border border-blue-200 rounded-xl text-center text-xl font-mono tracking-widest bg-white" onChange={e => setFormData({...formData, familyPin: e.target.value})} />
           </div>
-
-          <div>
-            <label className="block text-slate-700 font-bold mb-1">Voice Call Language</label>
-            <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              onChange={e => setFormData({...formData, language: e.target.value})}>
-              <option>Telugu</option>
-              <option>Hindi</option>
-              <option>English</option>
-            </select>
-          </div>
-
-          {/* Emergency Network Opt-In */}
-          <div className="p-4 bg-red-50 border border-red-100 rounded-xl mt-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" className="w-6 h-6 text-red-600 rounded focus:ring-red-500"
-                onChange={e => setFormData({...formData, isDonor: e.target.checked})} />
-              <span className="font-bold text-red-800 text-lg">Join Emergency Blood Network?</span>
-            </label>
-            
-            {formData.isDonor && (
-              <div className="mt-4 animate-fade-in">
-                <label className="block text-red-700 font-bold mb-1">Your Blood Group</label>
-                <select required={formData.isDonor} className="w-full p-3 border border-red-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white"
-                  onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
-                  <option value="">Select Group...</option>
-                  <option>A+</option><option>A-</option>
-                  <option>B+</option><option>B-</option>
-                  <option>O+</option><option>O-</option>
-                  <option>AB+</option><option>AB-</option>
-                </select>
-                <p className="text-xs text-red-500 mt-2">By joining, you agree to receive SMS pings if someone within 20km needs your blood type.</p>
-              </div>
-            )}
-          </div>
-
-          <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xl shadow-lg mt-8 transition-transform active:scale-95">
-            Create Account
+          <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg mt-4">
+            {isLoading ? "Creating..." : "Create Account"}
           </button>
         </form>
       </div>
     </div>
   );
 };
-
 export default Register;

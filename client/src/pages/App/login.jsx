@@ -1,126 +1,175 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const Login = () => {
+const LoginRegister = () => {
   const navigate = useNavigate();
-  const [loginType, setLoginType] = useState(null); // 'patient' or 'clinic'
-  
-  // States for form inputs
-  const [phone, setPhone] = useState('');
-  const [shopId, setShopId] = useState('');
-  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePatientLogin = (e) => {
+  // Form States
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [familyPin, setFamilyPin] = useState('');
+  const [role, setRole] = useState('patient');
+  const [shopId, setShopId] = useState('');
+  
+  // 🌟 Donor States
+  const [isDonor, setIsDonor] = useState(false);
+  const [bloodGroup, setBloodGroup] = useState('O+');
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // In a real app, this checks the DB. For the hackathon, we just route them!
-    alert(`Welcome back! Routing to Patient Dashboard...`);
-    navigate('/patient');
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', { phone, password });
+      const { user, token } = response.data;
+      
+      // Save info to local storage
+      localStorage.setItem('token', token);
+      localStorage.setItem('patientPhone', user.phone);
+      localStorage.setItem('patientName', user.name);
+      localStorage.setItem('role', user.role);
+      
+      if (user.role === 'clinic') {
+        localStorage.setItem('shopId', user.shopId);
+        navigate('/pos');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleClinicLogin = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (shopId === 'MG-001' && password === 'admin') {
-      alert("Terminal Authenticated. Opening MedGuard POS...");
-      navigate('/pos');
+    setIsLoading(true);
+
+    const userData = { name, phone, password, familyPin, role, shopId: role === 'clinic' ? shopId : undefined, isDonor, bloodGroup: isDonor ? bloodGroup : '' };
+
+    const sendToBackend = async (finalData) => {
+      try {
+        await axios.post('http://localhost:5000/api/auth/register', finalData);
+        alert("Registration Successful! Please login.");
+        setIsLogin(true); // Switch back to login view
+      } catch (error) {
+        alert(error.response?.data?.message || "Registration failed");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // 🌟 If they are a donor, try to grab their GPS!
+    if (isDonor && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userData.lat = position.coords.latitude;
+          userData.lng = position.coords.longitude;
+          sendToBackend(userData);
+        },
+        (error) => {
+          console.error("GPS Denied", error);
+          alert("GPS denied. You will be registered, but patients cannot find you on the map unless you update your location later.");
+          sendToBackend(userData); // Save them without GPS
+        },
+        { timeout: 5000 }
+      );
     } else {
-      alert("Invalid Partner ID or Password. Try MG-001 / admin");
+      // Not a donor, or browser doesn't support GPS
+      sendToBackend(userData);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-      
-      {/* The Main Selection Screen */}
-      {!loginType && (
-        <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="col-span-1 md:col-span-2 text-center mb-8">
-            <div className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-3xl shadow-inner inline-block mb-4">Mg</div>
-            <h1 className="text-4xl font-bold text-slate-800">Welcome to MedGuard</h1>
-            <p className="text-slate-500 mt-2 text-lg">Select your portal to continue</p>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-slate-100">
+        
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-lg mb-4">🏥</div>
+          <h1 className="text-3xl font-bold text-slate-800">MedGuard</h1>
+          <p className="text-slate-500 font-medium mt-1">{isLogin ? "Welcome back!" : "Create your account"}</p>
+        </div>
+
+        <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
+          
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Full Name</label>
+                <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Account Type</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setRole('patient')} className={`flex-1 py-3 rounded-xl font-bold border transition-colors ${role === 'patient' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>Patient</button>
+                  <button type="button" onClick={() => setRole('clinic')} className={`flex-1 py-3 rounded-xl font-bold border transition-colors ${role === 'clinic' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>Pharmacy</button>
+                </div>
+              </div>
+
+              {role === 'clinic' && (
+                <div className="animate-fade-in">
+                  <label className="block text-slate-700 font-bold mb-1">Pharmacy ID (e.g. MG-001)</label>
+                  <input type="text" required value={shopId} onChange={(e) => setShopId(e.target.value)} className="w-full p-3 border border-emerald-300 rounded-xl bg-emerald-50 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                </div>
+              )}
+
+              {role === 'patient' && (
+                <>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Family PIN (4 Digits)</label>
+                    <input type="password" required maxLength="4" placeholder="e.g. 1234" value={familyPin} onChange={(e) => setFamilyPin(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+
+                  {/* 🌟 EMERGENCY BLOOD DONOR SECTION */}
+                  <div className="bg-red-50 p-4 rounded-xl border border-red-100 mt-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={isDonor} onChange={(e) => setIsDonor(e.target.checked)} className="w-5 h-5 text-red-600 rounded border-red-300 focus:ring-red-500" />
+                      <span className="font-bold text-red-800">I want to be an Emergency Blood Donor 🩸</span>
+                    </label>
+                    
+                    {isDonor && (
+                      <div className="mt-4 animate-fade-in">
+                        <label className="block text-red-800 font-bold mb-1">My Blood Group</label>
+                        <select value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} className="w-full p-3 border border-red-200 rounded-xl bg-white focus:ring-2 focus:ring-red-500 outline-none font-bold">
+                          {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                        </select>
+                        <p className="text-xs text-red-600 mt-2 font-medium">By registering as a donor, your browser will ask for your location so patients nearby can find you in an emergency.</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          <div>
+            <label className="block text-slate-700 font-bold mb-1">Phone Number</label>
+            <input type="tel" required placeholder="e.g. 9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
           </div>
 
-          {/* Patient Card */}
-          <button 
-            onClick={() => setLoginType('patient')}
-            className="bg-white p-10 rounded-3xl shadow-lg border-2 border-transparent hover:border-blue-500 transition-all transform hover:-translate-y-2 flex flex-col items-center text-center group"
-          >
-            <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">📱</div>
-            <h2 className="text-2xl font-bold text-slate-800">Patient & Family</h2>
-            <p className="text-slate-500 mt-2">Access your schedule, health vault, and emergency network.</p>
-          </button>
-
-          {/* Clinic Card */}
-          <button 
-            onClick={() => setLoginType('clinic')}
-            className="bg-slate-900 p-10 rounded-3xl shadow-lg border-2 border-transparent hover:border-blue-500 transition-all transform hover:-translate-y-2 flex flex-col items-center text-center group"
-          >
-            <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">🏥</div>
-            <h2 className="text-2xl font-bold text-white">Pharmacy Partner</h2>
-            <p className="text-slate-400 mt-2">Access the POS billing terminal and sync patient routines.</p>
-          </button>
-        </div>
-      )}
-
-      {/* Patient Login Form */}
-      {loginType === 'patient' && (
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md animate-fade-in">
-          <button onClick={() => setLoginType(null)} className="text-slate-400 hover:text-slate-600 mb-6 font-bold flex items-center gap-2">
-            ← Back
-          </button>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Patient Login</h2>
-          <p className="text-slate-500 mb-8">Enter your registered phone number.</p>
-          
-          <form onSubmit={handlePatientLogin}>
-            <input 
-              type="tel" 
-              placeholder="Phone Number (e.g., 9876543210)" 
-              required 
-              className="w-full p-4 border border-slate-300 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-mono"
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg">
-              Send OTP / Login
-            </button>
-          </form>
-          <div className="mt-6 text-center text-slate-500">
-            New here? <span onClick={() => navigate('/register')} className="text-blue-600 font-bold cursor-pointer hover:underline">Create an account</span>
+          <div>
+            <label className="block text-slate-700 font-bold mb-1">Password</label>
+            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
-        </div>
-      )}
 
-      {/* Clinic POS Login Form */}
-      {loginType === 'clinic' && (
-        <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in border border-slate-700">
-          <button onClick={() => setLoginType(null)} className="text-slate-400 hover:text-white mb-6 font-bold flex items-center gap-2">
-            ← Back
+          <button type="submit" disabled={isLoading} className={`w-full py-4 mt-4 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 ${role === 'clinic' && !isLogin ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+            {isLoading ? "Processing..." : (isLogin ? "Secure Login" : "Create Account")}
           </button>
-          <h2 className="text-3xl font-bold text-white mb-2">Terminal Login</h2>
-          <p className="text-slate-400 mb-8">Authorized Pharmacy Partners Only.</p>
-          
-          <form onSubmit={handleClinicLogin}>
-            <input 
-              type="text" 
-              placeholder="Partner ID (Try: MG-001)" 
-              required 
-              className="w-full p-4 bg-slate-800 text-white border border-slate-600 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-              onChange={(e) => setShopId(e.target.value)}
-            />
-            <input 
-              type="password" 
-              placeholder="Password (Try: admin)" 
-              required 
-              className="w-full p-4 bg-slate-800 text-white border border-slate-600 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 outline-none"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-blue-900/50">
-              Access POS
-            </button>
-          </form>
-        </div>
-      )}
+        </form>
 
+        <div className="mt-8 text-center">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-slate-500 font-bold hover:text-blue-600 transition-colors">
+            {isLogin ? "New to MedGuard? Register here" : "Already have an account? Login"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Login;
+export default LoginRegister;

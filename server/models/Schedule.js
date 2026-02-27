@@ -12,7 +12,13 @@ const scheduleSchema = new mongoose.Schema({
   shopId: { type: String, default: 'POS_ENTRY' }, 
   time_slot: { type: String, required: true },
   target_time: { type: String, required: true },
-  status: { type: String, default: 'pending', enum: ['pending', 'taken', 'missed'] },
+  // 🌟 ADDED 'expired' to the allowed status list
+  status: { type: String, default: 'pending', enum: ['pending', 'taken', 'missed', 'expired'] }, 
+  
+  // 🌟 NEW: Doctor Consultation Date Logic
+  nextVisitDate: { type: Date, default: null }, 
+  consultAlertSent: { type: Boolean, default: false },
+
   alertLevel: { type: Number, default: 0 },
   lastAlertAt: { type: Date },
   medications: [medicationSchema],

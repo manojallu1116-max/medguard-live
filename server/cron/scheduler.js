@@ -54,6 +54,49 @@ export const startCronJobs = () => {
       }
 
       for (const schedule of pendingSchedules) {
+        
+        // 🌟 --- NEW: STRICT EXPIRY & DOCTOR CONSULT LOGIC --- 🌟
+        if (schedule.nextVisitDate) {
+          const today = new Date();
+          const visitDate = new Date(schedule.nextVisitDate);
+          
+          // Reset times to midnight to accurately calculate full days
+          today.setHours(0, 0, 0, 0);
+          visitDate.setHours(0, 0, 0, 0);
+          
+          const timeDiff = visitDate.getTime() - today.getTime();
+          const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          // 1. If the visit date has passed, STOP EVERYTHING.
+          if (daysLeft < 0) {
+            console.log(`🛑 Prescription Expired for ${schedule.patientPhone}. Stopping reminders.`);
+            schedule.status = 'expired';
+            await schedule.save();
+            continue; // Skips the rest of the loop so NO CALL IS MADE!
+          }
+
+          // 2. If exactly 2 days are left, send a warning SMS (Only once!)
+          if (daysLeft === 2 && !schedule.consultAlertSent) {
+            console.log(`⚠️ 2 Days Left! Sending Doctor Consult Warning to ${schedule.patientPhone}`);
+            try {
+              const medName = schedule.medications.length > 0 ? schedule.medications[0].name : "your medicines";
+              let phoneNum = schedule.patientPhone;
+              if (!phoneNum.startsWith('+')) phoneNum = `+91${phoneNum}`; 
+
+              await client.messages.create({
+                body: `MedGuard Alert: Your prescription for ${medName} ends in 2 days. Please consult your doctor. Do not take leftovers without advice.`,
+                to: phoneNum,
+                from: process.env.TWILIO_PHONE_NUMBER
+              });
+              schedule.consultAlertSent = true;
+              await schedule.save();
+            } catch (err) {
+              console.error("❌ Twilio Consult Warning Error:", err.message);
+            }
+          }
+        }
+        // 🌟 -------------------------------------------------- 🌟
+
         const user = await User.findOne({ phone: schedule.patientPhone });
         if (!user || user.reminderType === 'none') continue;
 

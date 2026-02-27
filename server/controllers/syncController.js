@@ -4,7 +4,8 @@ import twilio from 'twilio';
 
 export const syncPosBill = async (req, res) => {
   try {
-    const { patient_phone, shop_id, medicines } = req.body;
+    // 🌟 1. Grab next_visit_date from the request body
+    const { patient_phone, shop_id, medicines, next_visit_date } = req.body;
     const morningMeds = []; const afternoonMeds = []; const nightMeds = [];
 
     // 🌟 DEFAULT HD PHOTO FOR POS BILLS
@@ -18,11 +19,15 @@ export const syncPosBill = async (req, res) => {
       });
     });
 
-    if (morningMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Morning', target_time: '08:00 AM', medications: morningMeds, photo: defaultHdPhoto });
-    if (afternoonMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Afternoon', target_time: '02:00 PM', medications: afternoonMeds, photo: defaultHdPhoto });
-    if (nightMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Night', target_time: '08:00 PM', medications: nightMeds, photo: defaultHdPhoto });
+    // 🌟 2. Convert the POS string date into a real Date object (if provided)
+    const visitDateObj = next_visit_date ? new Date(next_visit_date) : null;
 
-    res.status(200).json({ message: "Prescription synced with HD photos!" });
+    // 🌟 3. Pass nextVisitDate into the creation logic
+    if (morningMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Morning', target_time: '08:00 AM', medications: morningMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
+    if (afternoonMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Afternoon', target_time: '02:00 PM', medications: afternoonMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
+    if (nightMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Night', target_time: '08:00 PM', medications: nightMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
+
+    res.status(200).json({ message: "Prescription synced with HD photos and Expiry Date!" });
   } catch (error) {
     res.status(500).json({ error: "Failed to sync bill" });
   }

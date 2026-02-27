@@ -24,7 +24,7 @@ const FindClinic = () => {
 
   const executeSearch = async (lat, lng) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/network/clinics?lat=${lat}&lng=${lng}&radius=${radius}`);
+      const response = await axios.get(`https://medguard-backend-rwlh.onrender.com/api/network/clinics?lat=${lat}&lng=${lng}&radius=${radius}`);
       setClinics(response.data);
       setHasSearched(true);
     } catch (error) {

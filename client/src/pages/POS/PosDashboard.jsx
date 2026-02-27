@@ -74,7 +74,7 @@ const PosDashboard = () => {
 
     try {
       // THE MAGIC CONNECTION: Send data to Node.js backend
-      const response = await axios.post('http://localhost:5000/api/sync/print-bill', syncPayload);
+      const response = await axios.post('https://medguard-backend-rwlh.onrender.com/api/sync/print-bill', syncPayload);
       
       console.log("BACKEND RESPONSE:", response.data);
       alert("✅ Success! Bill Printed and securely synced to the Patient's App in the cloud.");

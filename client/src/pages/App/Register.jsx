@@ -14,7 +14,7 @@ const Register = () => {
     if (formData.familyPin.length !== 4) return alert("Family PIN must be exactly 4 digits.");
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/auth/register', formData);
+      await axios.post('https://medguard-backend-rwlh.onrender.com/api/auth/register', formData);
       alert("✅ Registration Successful!");
       navigate('/'); 
     } catch (error) {

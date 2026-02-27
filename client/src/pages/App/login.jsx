@@ -23,7 +23,7 @@ const LoginRegister = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { phone, password });
+      const response = await axios.post('https://medguard-backend-rwlh.onrender.com/api/auth/login', { phone, password });
       const { user, token } = response.data;
       
       // Save info to local storage
@@ -53,7 +53,7 @@ const LoginRegister = () => {
 
     const sendToBackend = async (finalData) => {
       try {
-        await axios.post('http://localhost:5000/api/auth/register', finalData);
+        await axios.post('https://medguard-backend-rwlh.onrender.com/api/auth/register', finalData);
         alert("Registration Successful! Please login.");
         setIsLogin(true); // Switch back to login view
       } catch (error) {

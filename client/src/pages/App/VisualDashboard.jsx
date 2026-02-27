@@ -48,7 +48,7 @@ const VisualDashboard = () => {
 
   const fetchSchedule = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/sync/schedule/${patientPhone}`);
+      const response = await axios.get(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${patientPhone}`);
       setSchedule(response.data);
     } catch (error) { console.error(error); } 
     finally { setIsLoading(false); }
@@ -56,7 +56,7 @@ const VisualDashboard = () => {
 
   const handleTakeMedicine = async (id) => {
     try {
-      await axios.patch(`http://localhost:5000/api/sync/schedule/${id}/take`);
+      await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/take`);
       // 🌟 Re-fetch instantly so the Remaining Quantity updates on screen!
       fetchSchedule(); 
     } catch (error) { alert("Failed to update status."); }
@@ -98,7 +98,7 @@ const VisualDashboard = () => {
     const formatted24h = `${h24.toString().padStart(2, '0')}:${editMinute}`;
     
     try {
-      const response = await axios.patch(`http://localhost:5000/api/sync/schedule/${id}/time`, { newTime: formatted24h });
+      const response = await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/time`, { newTime: formatted24h });
       setSchedule(schedule.map(slot => slot._id === id ? { ...slot, target_time: response.data.target_time } : slot));
       setEditingTimeId(null);
     } catch (error) { alert("Failed to update time."); }
@@ -108,7 +108,7 @@ const VisualDashboard = () => {
     e.preventDefault();
     setIsSavingSettings(true);
     try {
-      await axios.put('http://localhost:5000/api/auth/settings', { phone: patientPhone, caretakerPhone, reminderType });
+      await axios.put('https://medguard-backend-rwlh.onrender.com/api/auth/settings', { phone: patientPhone, caretakerPhone, reminderType });
       alert("✅ Preferences Saved!");
       setShowSettings(false);
     } catch (error) { alert("Failed to save settings."); } 

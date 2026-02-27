@@ -77,7 +77,7 @@ const AddReminder = ({ patientPhone, onSuccess }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post('http://localhost:5000/api/sync/add-reminder', {
+      await axios.post('https://medguard-backend-rwlh.onrender.com/api/sync/add-reminder', {
         phone: patientPhone,
         medicineName,
         timeSlot,

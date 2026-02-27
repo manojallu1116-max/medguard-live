@@ -15,7 +15,7 @@ const FamilyDashboard = () => {
     setError('');
     try {
       // Uses the route you already built to verify PIN and get schedule!
-      const res = await axios.post('http://localhost:5000/api/sync/family-schedule', { phone, familyPin });
+      const res = await axios.post('https://medguard-backend-rwlh.onrender.com/api/sync/family-schedule', { phone, familyPin });
       setSchedule(res.data);
       setIsAuthenticated(true);
     } catch (err) {
@@ -25,7 +25,7 @@ const FamilyDashboard = () => {
 
   const refreshSchedule = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/sync/family-schedule', { phone, familyPin });
+      const res = await axios.post('https://medguard-backend-rwlh.onrender.com/api/sync/family-schedule', { phone, familyPin });
       setSchedule(res.data);
     } catch (err) { console.error(err); }
   };

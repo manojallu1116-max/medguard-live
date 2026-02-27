@@ -35,7 +35,7 @@ const BloodNetwork = () => {
   const executeSearch = async (lat, lng) => {
     try {
       const encodedGroup = encodeURIComponent(bloodGroup);
-      const response = await axios.get(`http://localhost:5000/api/network/blood/${encodedGroup}?lat=${lat}&lng=${lng}&radius=${radius}`);
+      const response = await axios.get(`https://medguard-backend-rwlh.onrender.com/api/network/blood/${encodedGroup}?lat=${lat}&lng=${lng}&radius=${radius}`);
       setDonors(response.data);
       setHasSearched(true);
     } catch (error) {

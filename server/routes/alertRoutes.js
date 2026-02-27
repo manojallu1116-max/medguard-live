@@ -8,7 +8,7 @@ const router = express.Router();
 // 1. SMS Alert Route
 router.post('/sms', sendEmergencySMS);
 
-// 🚨 NEW: Emergency SOS Route (SMS + Automated Call at the same time!)
+// 🚨 NEW: Emergency SOS Route (Sequential to respect Twilio Trial Limits!)
 router.post('/sos', async (req, res) => {
   try {
     const { phone, location } = req.body;
@@ -20,32 +20,35 @@ router.post('/sos', async (req, res) => {
 
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     
-    // 📱 1. Prepare the Ultra-Short SMS
-    const smsPromise = client.messages.create({
-      body: `SOS! ${user.name}: maps.google.com/?q=${location}`,
-      to: `+91${user.caretakerPhone}`,
-      from: process.env.TWILIO_PHONE_NUMBER
-    });
+    // 📱 1. Fire the SMS FIRST
+    try {
+      await client.messages.create({
+        body: `SOS! ${user.name}: https://maps.google.com/?q=${location}`,
+        to: `+91${user.caretakerPhone}`,
+        from: process.env.TWILIO_PHONE_NUMBER
+      });
+      console.log("✅ SOS SMS Sent Successfully");
+    } catch (smsError) {
+      console.error("❌ Twilio SMS Error:", smsError.message);
+    }
 
-    // 📞 2. Prepare the Automated Voice Call
-    const twimlMsg = `
-      <Response>
-        <Say language="en-IN">Emergency Alert. ${user.name} has pressed the S O S panic button. Please check your text messages immediately for their live GPS location.</Say>
-      </Response>
-    `;
+    // 📞 2. Fire the Voice Call SECOND
+    try {
+      const twimlMsg = `<Response><Say language="en-IN">Emergency Alert. ${user.name} has pressed the S O S panic button. Please check your text messages immediately for their live GPS location.</Say></Response>`;
+      
+      await client.calls.create({
+        twiml: twimlMsg,
+        to: `+91${user.caretakerPhone}`,
+        from: process.env.TWILIO_PHONE_NUMBER
+      });
+      console.log("✅ SOS Call Sent Successfully");
+    } catch (callError) {
+      console.error("❌ Twilio Call Error:", callError.message);
+    }
 
-    const callPromise = client.calls.create({
-      twiml: twimlMsg,
-      to: `+91${user.caretakerPhone}`,
-      from: process.env.TWILIO_PHONE_NUMBER
-    });
-
-    // 🚀 3. FIRE BOTH AT THE EXACT SAME TIME!
-    await Promise.all([smsPromise, callPromise]);
-
-    res.status(200).json({ message: "SOS Call and SMS Sent Successfully!" });
+    res.status(200).json({ message: "SOS Triggered!" });
   } catch (error) {
-    console.error("SOS Error:", error);
+    console.error("SOS Route Error:", error);
     res.status(500).json({ error: "Failed to send SOS" });
   }
 });

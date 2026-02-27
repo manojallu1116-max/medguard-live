@@ -62,7 +62,7 @@ const VisualDashboard = () => {
     } catch (error) { alert("Failed to update status."); }
   };
 
-  // 🌟 THE EMERGENCY SOS TRIGGER (Call + SMS)
+  // 🌟 THE EMERGENCY SOS TRIGGER
   const handleSOS = () => {
     setIsSendingSOS(true);
     

@@ -1,14 +1,14 @@
 import express from 'express';
-import { sendEmergencySMS, handleTwilioWebhook, handleLanguageSelection } from '../controllers/alertController.js';
 import twilio from 'twilio';
 import User from '../models/User.js';
+import { sendEmergencySMS, handleTwilioWebhook, handleLanguageSelection } from '../controllers/alertController.js';
 
 const router = express.Router();
 
 // 1. SMS Alert Route
 router.post('/sms', sendEmergencySMS);
 
-// 🚨 NEW: Emergency SOS Route (Live Location + Twilio Blast)
+// 🚨 NEW: Emergency SOS Route (Ultra-Compressed for Twilio Trial limit)
 router.post('/sos', async (req, res) => {
   try {
     const { phone, location } = req.body;
@@ -21,9 +21,9 @@ router.post('/sos', async (req, res) => {
 
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     
-    // Blast the SMS to the caretaker
+    // 🌟 REMOVED EMOJIS AND SHORTENED TEXT TO AVOID TWILIO CHARACTER LIMIT
     await client.messages.create({
-      body: `🚨 MedGuard EMERGENCY SOS 🚨\n\n${user.name} has pressed the panic button and needs immediate assistance.\n\nLive Location: ${location}`,
+      body: `MedGuard SOS: ${user.name} needs help! Loc: ${location}`,
       to: `+91${user.caretakerPhone}`,
       from: process.env.TWILIO_PHONE_NUMBER
     });

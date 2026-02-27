@@ -13,7 +13,7 @@ const VisualDashboard = () => {
   const navigate = useNavigate();
   const [schedule, setSchedule] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSendingSOS, setIsSendingSOS] = useState(false); // 🌟 SOS Loading State
+  const [isSendingSOS, setIsSendingSOS] = useState(false); 
   
   // Modals
   const [showAddReminder, setShowAddReminder] = useState(false);
@@ -71,7 +71,9 @@ const VisualDashboard = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+          
+          // 🌟 THE FIX: The absolute shortest Google Maps link possible!
+          const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
           
           try {
             // 2. Send the panic ping to the backend!
@@ -194,7 +196,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* MODALS REMAIN THE SAME... */}
+      {/* MODALS */}
       {showAddReminder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm pt-20 overflow-y-auto">
           <div className="relative w-full max-w-md">
@@ -238,7 +240,7 @@ const VisualDashboard = () => {
         <h2 className="text-xl font-bold text-slate-800 mb-4 px-2">{t.quickActions}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           
-          {/* 🌟 THE NEW SOS BUTTON 🌟 */}
+          {/* 🌟 THE SOS BUTTON */}
           <button 
             onClick={handleSOS} 
             disabled={isSendingSOS}

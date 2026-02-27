@@ -62,26 +62,22 @@ const VisualDashboard = () => {
     } catch (error) { alert("Failed to update status."); }
   };
 
-  // 🌟 THE EMERGENCY SOS TRIGGER
+  // 🌟 THE EMERGENCY SOS TRIGGER (Call + SMS)
   const handleSOS = () => {
     setIsSendingSOS(true);
     
-    // 1. Grab the device's GPS Location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          // 🌟 THE FIX: The absolute shortest Google Maps link possible!
-          const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+          // Send JUST the raw numbers to the backend to save characters!
+          const coords = `${position.coords.latitude},${position.coords.longitude}`;
           
           try {
-            // 2. Send the panic ping to the backend!
             await axios.post('https://medguard-backend-rwlh.onrender.com/api/alerts/sos', {
               phone: patientPhone,
-              location: mapsLink
+              location: coords
             });
-            alert("🚨 SOS Sent successfully to your caretaker!");
+            alert("🚨 SOS Sent! Your caretaker is being called and texted right now.");
           } catch (error) {
             alert("⚠️ Failed to send SOS. Does your caretaker phone number exist in settings?");
           } finally {
@@ -248,7 +244,7 @@ const VisualDashboard = () => {
           >
             <span className="text-5xl mb-1">{isSendingSOS ? "📡" : "🚨"}</span>
             <span className="text-2xl font-black text-white text-center tracking-widest uppercase">
-              {isSendingSOS ? "Locating..." : t.sos}
+              {isSendingSOS ? "Calling Help..." : t.sos}
             </span>
           </button>
 

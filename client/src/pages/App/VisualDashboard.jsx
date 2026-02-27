@@ -19,6 +19,12 @@ const VisualDashboard = () => {
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
+  // 🌟 NEW: Voice Assistant State
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+
   // Settings State
   const [caretakerPhone, setCaretakerPhone] = useState('');
   const [reminderType, setReminderType] = useState('call');
@@ -83,6 +89,60 @@ const VisualDashboard = () => {
     }
   };
 
+  // 🌟 NEW: Voice Assistant Logic
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Sorry, your browser doesn't support voice recognition.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-IN');
+    
+    setIsListening(true);
+    setTranscript("Listening...");
+    setAiResponse("");
+    window.speechSynthesis.cancel(); // Stop any ongoing speech
+
+    recognition.start();
+
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript.toLowerCase();
+      setTranscript(`You said: "${text}"`);
+      generateAiResponse(text);
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setTranscript("Could not hear you clearly. Please tap the mic and try again.");
+      setIsListening(false);
+    };
+  };
+
+  const generateAiResponse = (text) => {
+    let reply = "I recommend resting and drinking plenty of fluids. If symptoms persist, please consult a doctor.";
+    
+    if (text.includes("headache") || text.includes("head") || text.includes("sir dard")) {
+      reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
+    } else if (text.includes("fever") || text.includes("temperature") || text.includes("bukhar")) {
+      reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
+    } else if (text.includes("stomach") || text.includes("pain") || text.includes("pet dard")) {
+      reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
+    } else if (text.includes("cold") || text.includes("cough") || text.includes("khasi")) {
+      reply = "For a cold or cough, do steam inhalation and gargle with warm salt water. Honey and ginger can also soothe your throat.";
+    } else if (text.includes("cut") || text.includes("bleeding") || text.includes("blood")) {
+      reply = "Wash the wound immediately with clean water, apply an antiseptic, and bandage it tightly. Seek medical help if the bleeding does not stop.";
+    }
+
+    setAiResponse(reply);
+
+    // Speak the response back out loud!
+    const utterance = new SpeechSynthesisUtterance(reply);
+    utterance.lang = 'en-IN';
+    window.speechSynthesis.speak(utterance);
+  };
+
   const getLowStockAlerts = () => {
     const alerts = [];
     schedule.forEach(slot => {
@@ -140,7 +200,6 @@ const VisualDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24 relative"> 
-      {/* Increased padding-bottom to ensure the fixed bottom nav doesn't cover content */}
       
       {/* HEADER */}
       <header className="bg-blue-600 text-white p-6 md:p-8 rounded-b-3xl shadow-lg relative z-20">
@@ -153,8 +212,8 @@ const VisualDashboard = () => {
         <p className="text-blue-100 mt-1 text-lg">{t.hub}</p>
       </header>
 
-      {/* 🌟 1. SOS BUTTON & ALERTS MOVED DIRECTLY TO THE TOP 🌟 */}
-      <div className="max-w-2xl mx-auto px-4 mt-[-15px] relative z-30">
+      {/* BUTTONS AREA (SOS & AI) */}
+      <div className="max-w-2xl mx-auto px-4 mt-[-15px] relative z-30 flex flex-col gap-3">
         
         {/* HUGE SOS BUTTON */}
         <button 
@@ -168,9 +227,18 @@ const VisualDashboard = () => {
           </span>
         </button>
 
+        {/* 🌟 NEW AI ASSISTANT BUTTON 🌟 */}
+        <button 
+          onClick={() => setShowVoiceAssistant(true)} 
+          className="w-full py-3 px-6 rounded-xl border-2 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 flex items-center justify-center gap-3 shadow-md active:scale-95 transition-all"
+        >
+          <span className="text-2xl">🎙️</span>
+          <span className="text-lg font-bold text-indigo-700">Ask AI Voice Assistant</span>
+        </button>
+
         {/* LOW STOCK WARNINGS */}
         {lowStockAlerts.length > 0 && (
-          <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl shadow-lg p-4 mt-3 border-2 border-white">
+          <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl shadow-lg p-4 mt-1 border-2 border-white">
             <h3 className="text-white font-black text-lg tracking-wide shadow-sm flex items-center gap-2">
               <span>⚠️</span> Refill Required
             </h3>
@@ -187,6 +255,37 @@ const VisualDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* 🌟 VOICE ASSISTANT MODAL 🌟 */}
+      {showVoiceAssistant && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
+            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-5 flex justify-between items-center text-white">
+              <h2 className="text-xl font-black tracking-wide">🎙️ Health Assistant</h2>
+              <button onClick={() => { setShowVoiceAssistant(false); window.speechSynthesis.cancel(); }} className="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+            </div>
+            
+            <div className="p-8 flex flex-col items-center justify-center min-h-[350px]">
+              <button 
+                onClick={handleVoiceSearch}
+                className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-2xl transition-all ${isListening ? 'bg-red-500 animate-pulse scale-110 shadow-red-500/50' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/40'}`}
+              >
+                <span className="text-white">{isListening ? "👂" : "🎤"}</span>
+              </button>
+              
+              <p className="mt-6 text-lg font-bold text-slate-700 text-center min-h-[28px]">
+                {transcript || "Tap the mic and say: 'I have a headache'"}
+              </p>
+
+              {aiResponse && (
+                <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl w-full text-center">
+                  <p className="text-indigo-900 font-bold leading-relaxed">{aiResponse}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALS */}
       {showAddReminder && (
@@ -227,7 +326,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* 🌟 2. SCHEDULE LIST TAKES UP THE MAIN VIEW 🌟 */}
+      {/* SCHEDULE LIST */}
       <main className="p-4 mt-2 max-w-2xl mx-auto space-y-6">
         <h2 className="text-xl font-black text-slate-800 px-2 tracking-wide uppercase">{t.schedule}</h2>
         
@@ -311,8 +410,8 @@ const VisualDashboard = () => {
         )}
       </main>
 
-      {/* 🌟 3. APP-STYLE BOTTOM NAVIGATION BAR 🌟 */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 px-2 pb-safe">
+      {/* BOTTOM NAVIGATION BAR */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 px-2 pb-safe">
         <div className="flex justify-between items-center max-w-md mx-auto h-16">
           <button onClick={() => setShowAddReminder(true)} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-blue-600 active:scale-90 transition-transform">
             <span className="text-2xl">➕</span>

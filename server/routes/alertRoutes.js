@@ -1,11 +1,15 @@
 import express from 'express';
-import { sendEmergencySMS, handleTwilioWebhook } from '../controllers/alertController.js';
+import { sendEmergencySMS, handleTwilioWebhook, handleLanguageSelection } from '../controllers/alertController.js';
 
 const router = express.Router();
 
-router.post('/send-sms', sendEmergencySMS);
+// 1. SMS Alert Route
+router.post('/sms', sendEmergencySMS);
 
-// 🌟 NEW: Twilio POSTs to this route when a button is pressed
-router.post('/webhook/:scheduleId', handleTwilioWebhook); 
+// 2. Webhook: The standard medicine confirmation (Listens for Press 1)
+router.post('/webhook/:scheduleId', handleTwilioWebhook);
+
+// 3. Webhook: The NEW Language Selection IVR (Listens for Press 1, 2, or 3)
+router.post('/language/:scheduleId', handleLanguageSelection);
 
 export default router;

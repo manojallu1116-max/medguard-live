@@ -7,23 +7,23 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
 import syncRoutes from './routes/syncRoutes.js';
 import alertRoutes from './routes/alertRoutes.js';
-import networkRoutes from './routes/networkRoutes.js'; // 🌟 BROUGHT THIS BACK!
+import networkRoutes from './routes/networkRoutes.js';
 import { startCronJobs } from './cron/scheduler.js';
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
+// Middleware - 🌟 ADDED 50MB LIMIT FOR PHOTOS!
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true })); 
 
-// 🌟 ROUTES
+// ROUTES
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/alerts', alertRoutes);
-app.use('/api/network', networkRoutes); // 🌟 BROUGHT THIS BACK!
+app.use('/api/network', networkRoutes); 
 
 const PORT = process.env.PORT || 5000;
 

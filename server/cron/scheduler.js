@@ -15,20 +15,20 @@ const getVoiceLanguage = (lang) => {
 
 const getSpokenScript = (lang, name, timeSlot, medicines, isSecondCall = false) => {
   if (lang === 'Hindi') {
-    if (isSecondCall) return `नमस्ते ${name}। यह मेडगार्ड से आपका दूसरा रिमाइंडर है। कृपया तुरंत ${medicines} लें। पुष्टि करने के लिए 1 दबाएं।`;
-    return `नमस्ते ${name}, यह मेडगार्ड है। आपकी ${timeSlot} दवा का समय हो गया है। कृपया ${medicines} लें। पुष्टि करने के लिए 1 दबाएं।`;
+    if (isSecondCall) return `Namaste ${name}. Yeh Med-guard se aapka doosra reminder hai. Kripaya turant ${medicines} lein. Confirm karne ke liye, 1 dabayein.`;
+    return `Namaste ${name}, yeh Med-guard hai. Aapki ${timeSlot} dawa ka samay ho gaya hai. Kripaya ${medicines} lein. Confirm karne ke liye, 1 dabayein.`;
   } 
   if (lang === 'Telugu') {
-    if (isSecondCall) return `నమస్కారం ${name}. ఇది మెడ్‌గార్డ్ నుండి రెండవ రిమైండర్. దయచేసి వెంటనే ${medicines} తీసుకోండి. నిర్ధారించడానికి 1 నొక్కండి.`;
-    return `నమస్కారం ${name}, ఇది మెడ్‌గార్డ్. మీ ${timeSlot} మందుల సమయం అయింది. దయచేసి ${medicines} తీసుకోండి. నిర్ధారించడానికి 1 నొక్కండి.`;
+    if (isSecondCall) return `Namaskaram ${name}. Idi Med-guard nundi rendova reminder. Dayachesi ventane ${medicines} teesukondi. Confirm cheyadaniki, 1 nokkandi.`;
+    return `Namaskaram ${name}, idi Med-guard. Mee ${timeSlot} mandula samayam ayindi. Dayachesi ${medicines} teesukondi. Confirm cheyadaniki, 1 nokkandi.`;
   }
   if (isSecondCall) return `Hello ${name}. This is your second reminder. Please take ${medicines} immediately. Press 1 to confirm.`;
   return `Hello ${name}, this is MedGuard. It is time for your ${timeSlot} medication. Please take ${medicines} now. Press 1 to confirm.`;
 };
 
 const getNoInputScript = (lang) => {
-  if (lang === 'Hindi') return "हमें कोई उत्तर नहीं मिला। हम बाद में कॉल करेंगे। धन्यवाद।";
-  if (lang === 'Telugu') return "మాకు ఎలాంటి సమాధానం రాలేదు. మేము మళ్లీ కాల్ చేస్తాము. ధన్యవాదాలు.";
+  if (lang === 'Hindi') return "Humein koi jawaab nahi mila. Hum baad mein call karenge. Dhanyawad.";
+  if (lang === 'Telugu') return "Maku elanti samadhanam raledu. Memu malli call chestamu. Dhanyavadalu.";
   return "We did not receive any input. We will call you back later. Goodbye.";
 };
 
@@ -37,7 +37,9 @@ export const startCronJobs = () => {
 
   cron.schedule('* * * * *', async () => {
     const now = new Date();
-    const currentHourStr = now.getHours() % 12 || 12;
+    
+    // 🌟 THE FIX: Added .padStart(2, '0') so "6" becomes "06" and perfectly matches MongoDB!
+    const currentHourStr = (now.getHours() % 12 || 12).toString().padStart(2, '0');
     const currentMinStr = now.getMinutes().toString().padStart(2, '0');
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
     const currentTimeStr = `${currentHourStr}:${currentMinStr} ${ampm}`;
@@ -46,7 +48,10 @@ export const startCronJobs = () => {
 
     try {
       const pendingSchedules = await Schedule.find({ status: 'pending' });
-      console.log(`🤖 Found ${pendingSchedules.length} pending medicines.`);
+      
+      if (pendingSchedules.length > 0) {
+        console.log(`🤖 Found ${pendingSchedules.length} pending medicines.`);
+      }
 
       for (const schedule of pendingSchedules) {
         const user = await User.findOne({ phone: schedule.patientPhone });
@@ -60,18 +65,41 @@ export const startCronJobs = () => {
 
         // LEVEL 0: 1st Alert!
         if (schedule.alertLevel === 0 && schedule.target_time === currentTimeStr) {
-          console.log(`[ALERT 1] Ringing ${user.name}... Waiting for Keypad '1'...`);
+          console.log(`[ALERT 1] Ringing ${user.name}... Checking Language Preferences...`);
+          
           if (user.reminderType === 'call') {
             try {
-              const script = getSpokenScript(user.language, user.name, schedule.time_slot, spokenMedicines, false);
-              const twimlMsg = `
-                <Response>
-                  <Gather numDigits="1" action="${webhookUrl}" method="POST" timeout="10">
-                    <Say language="${voiceLang}">${script}</Say>
-                  </Gather>
-                  <Say language="${voiceLang}">${getNoInputScript(user.language)}</Say>
-                </Response>
-              `;
+              let twimlMsg = '';
+
+              if (!user.language || user.language === 'none' || user.language === '') {
+                console.log(`🗣️ No language found. Asking for preference...`);
+                const languageWebhookUrl = `${process.env.PUBLIC_URL}/api/alerts/language/${schedule._id}`;
+                
+                twimlMsg = `
+                  <Response>
+                    <Gather numDigits="1" action="${languageWebhookUrl}" method="POST" timeout="15">
+                      <Say language="en-IN">Welcome to Med Guard. For English, press 1.</Say>
+                      <Say language="hi-IN">Hindi ke liye, do dabayein.</Say>
+                      <Say language="te-IN">Telugu kosam, moodu nokkandi.</Say>
+                    </Gather>
+                    <Say language="en-IN">We did not receive any input. We will call back later. Goodbye.</Say>
+                  </Response>
+                `;
+              } 
+              else {
+                console.log(`🗣️ Language known (${user.language}). Skipping menu...`);
+                const script = getSpokenScript(user.language, user.name, schedule.time_slot, spokenMedicines, false);
+                
+                twimlMsg = `
+                  <Response>
+                    <Gather numDigits="1" action="${webhookUrl}" method="POST" timeout="10">
+                      <Say language="${voiceLang}">${script}</Say>
+                    </Gather>
+                    <Say language="${voiceLang}">${getNoInputScript(user.language)}</Say>
+                  </Response>
+                `;
+              }
+
               await client.calls.create({ twiml: twimlMsg, to: targetPatientPhone, from: process.env.TWILIO_PHONE_NUMBER });
               console.log(`✅ Call 1 successfully sent!`);
             } catch (err) { console.error("❌ TWILIO ERROR:", err.message); }
@@ -113,8 +141,9 @@ export const startCronJobs = () => {
           if (diffMins >= 1 && user.caretakerPhone) {
             console.log(`[ALERT 3] Escalating! Texting Caretaker...`);
             try {
+              // 🌟 COMPRESSED CARETAKER SMS to beat the Trial Limit!
               await client.messages.create({
-                body: `🚨 MedGuard Emergency: ${user.name} missed their medication (${spokenMedicines}). Please check on them.`,
+                body: `MedGuard SOS: ${user.name} missed meds (${spokenMedicines}). Pls check!`,
                 to: `+91${user.caretakerPhone}`,
                 from: process.env.TWILIO_PHONE_NUMBER
               });

@@ -9,12 +9,14 @@ export const syncPosBill = async (req, res) => {
 
     const defaultHdPhoto = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80";
 
-    // 🌟 ADDED isContinuous mapping
+    // 🌟 THE FIX: Actually grab the total_quantity from the frontend and save it to totalStock!
     medicines.forEach(med => {
+      const boughtStock = med.total_quantity || 10; // Grabs exact POS quantity
+
       med.dosage_routine.forEach(dose => {
-        if (dose.time_slot === 'Morning') morningMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
-        if (dose.time_slot === 'Afternoon') afternoonMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
-        if (dose.time_slot === 'Night') nightMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
+        if (dose.time_slot === 'Morning') morningMeds.push({ name: med.name, qty: dose.qty, totalStock: boughtStock, isContinuous: med.isContinuous });
+        if (dose.time_slot === 'Afternoon') afternoonMeds.push({ name: med.name, qty: dose.qty, totalStock: boughtStock, isContinuous: med.isContinuous });
+        if (dose.time_slot === 'Night') nightMeds.push({ name: med.name, qty: dose.qty, totalStock: boughtStock, isContinuous: med.isContinuous });
       });
     });
 
@@ -24,7 +26,7 @@ export const syncPosBill = async (req, res) => {
     if (afternoonMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Afternoon', target_time: '02:00 PM', medications: afternoonMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
     if (nightMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Night', target_time: '08:00 PM', medications: nightMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
 
-    res.status(200).json({ message: "Prescription synced with Expiry Date and Continuous Flags!" });
+    res.status(200).json({ message: "Prescription synced with Expiry Date and EXACT Stock!" });
   } catch (error) {
     res.status(500).json({ error: "Failed to sync bill" });
   }

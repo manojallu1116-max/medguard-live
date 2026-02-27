@@ -38,7 +38,6 @@ export const startCronJobs = () => {
   cron.schedule('* * * * *', async () => {
     const now = new Date();
     
-    // 🌟 THE FIX: Added .padStart(2, '0') so "6" becomes "06" and perfectly matches MongoDB!
     const currentHourStr = (now.getHours() % 12 || 12).toString().padStart(2, '0');
     const currentMinStr = now.getMinutes().toString().padStart(2, '0');
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
@@ -55,29 +54,38 @@ export const startCronJobs = () => {
 
       for (const schedule of pendingSchedules) {
         
-        // 🌟 --- NEW: STRICT EXPIRY & DOCTOR CONSULT LOGIC --- 🌟
+        // 🌟 --- NEW SMART EXPIRY LOGIC WITH CONTINUOUS OVERRIDE --- 🌟
         if (schedule.nextVisitDate) {
           const today = new Date();
           const visitDate = new Date(schedule.nextVisitDate);
           
-          // Reset times to midnight to accurately calculate full days
           today.setHours(0, 0, 0, 0);
           visitDate.setHours(0, 0, 0, 0);
           
           const timeDiff = visitDate.getTime() - today.getTime();
           const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-          // 1. If the visit date has passed, STOP EVERYTHING.
+          // 1. If Date has passed, filter out non-continuous meds!
           if (daysLeft < 0) {
-            console.log(`🛑 Prescription Expired for ${schedule.patientPhone}. Stopping reminders.`);
-            schedule.status = 'expired';
-            await schedule.save();
-            continue; // Skips the rest of the loop so NO CALL IS MADE!
+            // Only keep medicines marked as Continuous (BP/Sugar)
+            const continuousMeds = schedule.medications.filter(med => med.isContinuous);
+
+            if (continuousMeds.length === 0) {
+              console.log(`🛑 Prescription Expired for ${schedule.patientPhone}. No continuous meds. Stopping reminders.`);
+              schedule.status = 'expired';
+              await schedule.save();
+              continue; // Skip the rest of the loop, NO CALL!
+            } else {
+              console.log(`♻️ Prescription Expired, but keeping continuous meds running for ${schedule.patientPhone}!`);
+              schedule.medications = continuousMeds;
+              schedule.nextVisitDate = null; // Clear the expiry date so it runs forever now
+              await schedule.save();
+            }
           }
 
-          // 2. If exactly 2 days are left, send a warning SMS (Only once!)
+          // 2. Warning SMS logic remains the same
           if (daysLeft === 2 && !schedule.consultAlertSent) {
-            console.log(`⚠️ 2 Days Left! Sending Doctor Consult Warning to ${schedule.patientPhone}`);
+            console.log(`⚠️ 2 Days Left! Sending Consult Warning.`);
             try {
               const medName = schedule.medications.length > 0 ? schedule.medications[0].name : "your medicines";
               let phoneNum = schedule.patientPhone;
@@ -90,9 +98,7 @@ export const startCronJobs = () => {
               });
               schedule.consultAlertSent = true;
               await schedule.save();
-            } catch (err) {
-              console.error("❌ Twilio Consult Warning Error:", err.message);
-            }
+            } catch (err) { console.error("❌ Twilio Warning Error:", err.message); }
           }
         }
         // 🌟 -------------------------------------------------- 🌟
@@ -184,7 +190,6 @@ export const startCronJobs = () => {
           if (diffMins >= 1 && user.caretakerPhone) {
             console.log(`[ALERT 3] Escalating! Texting Caretaker...`);
             try {
-              // 🌟 COMPRESSED CARETAKER SMS to beat the Trial Limit!
               await client.messages.create({
                 body: `MedGuard SOS: ${user.name} missed meds (${spokenMedicines}). Pls check!`,
                 to: `+91${user.caretakerPhone}`,

@@ -3,21 +3,23 @@ import axios from 'axios';
 
 const PosDashboard = () => {
   const [patientPhone, setPatientPhone] = useState('');
+  // 🌟 ADDED 'isContinuous' to the default state
   const [medicines, setMedicines] = useState([
-    { name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }
+    { name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0, isContinuous: false }
   ]);
-  const [isSyncing, setIsSyncing] = useState(false); // Added a loading state!
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [nextVisitDate, setNextVisitDate] = useState(''); // 🌟 DATE STATE
 
   const dosagePresets = ["1-0-1", "1-1-1", "1-0-0", "0-0-1", "0-1-0"];
 
   const handleAddRow = () => {
-    setMedicines([...medicines, { name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }]);
+    setMedicines([...medicines, { name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0, isContinuous: false }]);
   };
 
   const handleRemoveRow = (index) => {
     const updated = medicines.filter((_, i) => i !== index);
     if (updated.length === 0) {
-      setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }]);
+      setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0, isContinuous: false }]);
     } else {
       setMedicines(updated);
     }
@@ -55,6 +57,7 @@ const PosDashboard = () => {
         return {
           name: med.name,
           total_quantity: parseInt(med.qty) || 0,
+          isContinuous: med.isContinuous, // 🌟 SENDING THE FLAG TO BACKEND
           dosage_routine: dosage_routine
         };
       });
@@ -67,24 +70,23 @@ const PosDashboard = () => {
     const syncPayload = {
       patient_phone: patientPhone,
       shop_id: "MG-001",
-      medicines: payloadMedicines
+      medicines: payloadMedicines,
+      next_visit_date: nextVisitDate // 🌟 SENDING DATE TO BACKEND
     };
 
     setIsSyncing(true);
 
     try {
-      // THE MAGIC CONNECTION: Send data to Node.js backend
       const response = await axios.post('https://medguard-backend-rwlh.onrender.com/api/sync/print-bill', syncPayload);
-      
       console.log("BACKEND RESPONSE:", response.data);
-      alert("✅ Success! Bill Printed and securely synced to the Patient's App in the cloud.");
+      alert("✅ Success! Bill Printed and synced to cloud.");
       
-      // Reset form on success
       setPatientPhone('');
-      setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0 }]);
+      setNextVisitDate('');
+      setMedicines([{ name: '', qty: '', price: '', morning: 0, afternoon: 0, night: 0, isContinuous: false }]);
     } catch (error) {
       console.error("Sync Error:", error);
-      alert("❌ Failed to sync to cloud. Is your Node.js server running on port 5000?");
+      alert("❌ Failed to sync to cloud.");
     } finally {
       setIsSyncing(false);
     }
@@ -112,13 +114,15 @@ const PosDashboard = () => {
       <main className="flex-1 overflow-auto p-6 flex flex-col gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1000px]">
+            <table className="w-full text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-sm uppercase tracking-wider">
                   <th className="p-4 font-semibold w-12 text-center">#</th>
                   <th className="p-4 font-semibold w-1/4">Medicine Name</th>
-                  <th className="p-4 font-semibold w-24">Qty</th>
-                  <th className="p-4 font-semibold w-32">Price (₹)</th>
+                  {/* 🌟 NEW CONTINUOUS COLUMN */}
+                  <th className="p-4 font-semibold w-24 text-center text-blue-600">♾️ BP/Sugar (Cont.)</th>
+                  <th className="p-4 font-semibold w-20">Qty</th>
+                  <th className="p-4 font-semibold w-28">Price (₹)</th>
                   <th className="p-4 font-semibold text-center bg-blue-50/50">Presets</th>
                   <th className="p-4 font-semibold w-24 text-center bg-amber-50/50 text-amber-700">☀️ Morn</th>
                   <th className="p-4 font-semibold w-24 text-center bg-orange-50/50 text-orange-700">🌇 Aft</th>
@@ -131,6 +135,12 @@ const PosDashboard = () => {
                   <tr key={index} className="hover:bg-slate-50 transition-colors group">
                     <td className="p-3 text-center text-slate-400 font-medium">{index + 1}</td>
                     <td className="p-3"><input type="text" value={med.name} onChange={(e) => handleUpdateRow(index, 'name', e.target.value)} className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Type or scan item..." /></td>
+                    
+                    {/* 🌟 NEW CONTINUOUS CHECKBOX */}
+                    <td className="p-3 text-center">
+                      <input type="checkbox" checked={med.isContinuous} onChange={(e) => handleUpdateRow(index, 'isContinuous', e.target.checked)} className="w-5 h-5 cursor-pointer accent-blue-600" />
+                    </td>
+
                     <td className="p-3"><input type="number" min="1" value={med.qty} onChange={(e) => handleUpdateRow(index, 'qty', e.target.value)} className="w-full p-2 border border-slate-200 rounded text-center focus:ring-2 focus:ring-blue-500 outline-none font-mono" placeholder="0" /></td>
                     <td className="p-3"><input type="number" min="0" value={med.price} onChange={(e) => handleUpdateRow(index, 'price', e.target.value)} className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-right" placeholder="0.00" /></td>
                     <td className="p-3 bg-blue-50/30">
@@ -156,13 +166,27 @@ const PosDashboard = () => {
       </main>
 
       <footer className="bg-white border-t-4 border-blue-600 p-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shrink-0 flex justify-between items-end">
-        <div>
-          <p className="text-slate-500 text-sm mb-1">Receipt Summary</p>
-          <div className="flex gap-6">
-            <p className="text-slate-700 font-semibold">Total Items: <span className="text-xl text-slate-900">{totalItems}</span></p>
-            <p className="text-slate-700 font-semibold">Taxes: <span className="text-slate-500 text-sm">Included</span></p>
+        <div className="flex gap-10 items-end">
+          <div>
+            <p className="text-slate-500 text-sm mb-1">Receipt Summary</p>
+            <div className="flex gap-6">
+              <p className="text-slate-700 font-semibold">Total Items: <span className="text-xl text-slate-900">{totalItems}</span></p>
+              <p className="text-slate-700 font-semibold">Taxes: <span className="text-slate-500 text-sm">Included</span></p>
+            </div>
+          </div>
+
+          {/* 🌟 DOCTOR'S VISIT DATE UI (Ensured it renders properly) */}
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 flex flex-col gap-1 mb-1 shadow-inner">
+            <label className="text-xs font-bold text-orange-800 uppercase tracking-wider">📅 Consult Doctor Date (Expiry)</label>
+            <input 
+              type="date" 
+              value={nextVisitDate} 
+              onChange={(e) => setNextVisitDate(e.target.value)}
+              className="p-1.5 border border-orange-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-semibold text-slate-800 bg-white cursor-pointer"
+            />
           </div>
         </div>
+
         <div className="flex items-center gap-8">
           <div className="text-right">
             <p className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-1">Grand Total</p>

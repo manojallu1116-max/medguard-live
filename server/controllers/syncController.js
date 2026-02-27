@@ -4,30 +4,27 @@ import twilio from 'twilio';
 
 export const syncPosBill = async (req, res) => {
   try {
-    // 🌟 1. Grab next_visit_date from the request body
     const { patient_phone, shop_id, medicines, next_visit_date } = req.body;
     const morningMeds = []; const afternoonMeds = []; const nightMeds = [];
 
-    // 🌟 DEFAULT HD PHOTO FOR POS BILLS
     const defaultHdPhoto = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80";
 
+    // 🌟 ADDED isContinuous mapping
     medicines.forEach(med => {
       med.dosage_routine.forEach(dose => {
-        if (dose.time_slot === 'Morning') morningMeds.push({ name: med.name, qty: dose.qty });
-        if (dose.time_slot === 'Afternoon') afternoonMeds.push({ name: med.name, qty: dose.qty });
-        if (dose.time_slot === 'Night') nightMeds.push({ name: med.name, qty: dose.qty });
+        if (dose.time_slot === 'Morning') morningMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
+        if (dose.time_slot === 'Afternoon') afternoonMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
+        if (dose.time_slot === 'Night') nightMeds.push({ name: med.name, qty: dose.qty, isContinuous: med.isContinuous });
       });
     });
 
-    // 🌟 2. Convert the POS string date into a real Date object (if provided)
     const visitDateObj = next_visit_date ? new Date(next_visit_date) : null;
 
-    // 🌟 3. Pass nextVisitDate into the creation logic
     if (morningMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Morning', target_time: '08:00 AM', medications: morningMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
     if (afternoonMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Afternoon', target_time: '02:00 PM', medications: afternoonMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
     if (nightMeds.length > 0) await Schedule.create({ patientPhone: patient_phone, shopId: shop_id, time_slot: 'Night', target_time: '08:00 PM', medications: nightMeds, photo: defaultHdPhoto, nextVisitDate: visitDateObj });
 
-    res.status(200).json({ message: "Prescription synced with HD photos and Expiry Date!" });
+    res.status(200).json({ message: "Prescription synced with Expiry Date and Continuous Flags!" });
   } catch (error) {
     res.status(500).json({ error: "Failed to sync bill" });
   }
@@ -124,10 +121,9 @@ export const addManualReminder = async (req, res) => {
     if (timeSlot === "Night") target_time = "08:00 PM";
 
     const parsedQty = parseInt(quantity) || 1; 
-    const parsedStock = parseInt(totalStock) || 15; // Defaults to 15 if frontend fails
+    const parsedStock = parseInt(totalStock) || 15; 
     const fallbackShopId = "MANUAL_ENTRY";
 
-    // 🌟 MAGIC PHOTO FALLBACK: If no camera photo is taken, force a beautiful HD image!
     let finalPhoto = photo || "";
     if (!finalPhoto) {
       finalPhoto = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80";
@@ -140,7 +136,7 @@ export const addManualReminder = async (req, res) => {
       target_time: target_time,
       status: 'pending',
       alertLevel: 0,
-      medications: [{ name: medicineName, qty: parsedQty, totalStock: parsedStock }], 
+      medications: [{ name: medicineName, qty: parsedQty, totalStock: parsedStock, isContinuous: false }], 
       photo: finalPhoto 
     });
 

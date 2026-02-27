@@ -4,15 +4,16 @@ import axios from 'axios';
 import AddReminder from '../../components/AddReminder'; 
 
 const translations = {
-  en: { greeting: "Good Morning", hub: "Here is your health hub.", quickActions: "Quick Actions", emergency: "Emergency Blood", family: "Family Observer", clinic: "Find Clinic", settings: "App Settings", addMed: "Add Medicine", schedule: "Today's Schedule", noMeds: "No medicines scheduled!", takeMeds: "Take", pills: "Pills", tookIt: "💊 I Took It", taken: "✅ Medicine Taken" },
-  te: { greeting: "శుభోదయం", hub: "ఇది మీ హెల్త్ హబ్.", quickActions: "త్వరిత చర్యలు", emergency: "అత్యవసర రక్తం", family: "కుటుంబ పరిశీలకుడు", clinic: "క్లినిక్ కనుగొనండి", settings: "యాప్ సెట్టింగ్‌లు", addMed: "మందు జోడించండి", schedule: "నేటి షెడ్యూల్", noMeds: "మందులు లేవు!", takeMeds: "తీసుకోండి", pills: "మాత్రలు", tookIt: "💊 నేను తీసుకున్నాను", taken: "✅ మందు తీసుకున్నారు" },
-  hi: { greeting: "सुप्रभात", hub: "यह आपका स्वास्थ्य केंद्र है।", quickActions: "त्वरित कार्रवाई", emergency: "आपातकालीन रक्त", family: "परिवार पर्यवेक्षक", clinic: "क्लीनिक खोजें", settings: "ऐप सेटिंग्स", addMed: "दवा जोड़ें", schedule: "आज की अनुसूची", noMeds: "कोई दवा नहीं!", takeMeds: "लें", pills: "गोलियां", tookIt: "💊 मैंने ले लिया", taken: "✅ दवा ले ली गई" }
+  en: { greeting: "Good Morning", hub: "Here is your health hub.", quickActions: "Quick Actions", emergency: "Emergency Blood", family: "Family Observer", clinic: "Find Clinic", settings: "App Settings", addMed: "Add Medicine", schedule: "Today's Schedule", noMeds: "No medicines scheduled!", takeMeds: "Take", pills: "Pills", tookIt: "💊 I Took It", taken: "✅ Medicine Taken", sos: "SOS PANIC" },
+  te: { greeting: "శుభోదయం", hub: "ఇది మీ హెల్త్ హబ్.", quickActions: "త్వరిత చర్యలు", emergency: "అత్యవసర రక్తం", family: "కుటుంబ పరిశీలకుడు", clinic: "క్లినిక్ కనుగొనండి", settings: "యాప్ సెట్టింగ్‌లు", addMed: "మందు జోడించండి", schedule: "నేటి షెడ్యూల్", noMeds: "మందులు లేవు!", takeMeds: "తీసుకోండి", pills: "మాత్రలు", tookIt: "💊 నేను తీసుకున్నాను", taken: "✅ మందు తీసుకున్నారు", sos: "SOS" },
+  hi: { greeting: "सुप्रभात", hub: "यह आपका स्वास्थ्य केंद्र है।", quickActions: "त्वरित कार्रवाई", emergency: "आपातकालीन रक्त", family: "परिवार पर्यवेक्षक", clinic: "क्लीनिक खोजें", settings: "ऐप सेटिंग्स", addMed: "दवा जोड़ें", schedule: "आज की अनुसूची", noMeds: "कोई दवा नहीं!", takeMeds: "लें", pills: "गोलियां", tookIt: "💊 मैंने ले लिया", taken: "✅ दवा ले ली गई", sos: "आपातकालीन" }
 };
 
 const VisualDashboard = () => {
   const navigate = useNavigate();
   const [schedule, setSchedule] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingSOS, setIsSendingSOS] = useState(false); // 🌟 SOS Loading State
   
   // Modals
   const [showAddReminder, setShowAddReminder] = useState(false);
@@ -57,17 +58,49 @@ const VisualDashboard = () => {
   const handleTakeMedicine = async (id) => {
     try {
       await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/take`);
-      // 🌟 Re-fetch instantly so the Remaining Quantity updates on screen!
       fetchSchedule(); 
     } catch (error) { alert("Failed to update status."); }
   };
 
-  // 🌟 SCANNER: Check for Medicines that are running out!
+  // 🌟 THE EMERGENCY SOS TRIGGER
+  const handleSOS = () => {
+    setIsSendingSOS(true);
+    
+    // 1. Grab the device's GPS Location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+          
+          try {
+            // 2. Send the panic ping to the backend!
+            await axios.post('https://medguard-backend-rwlh.onrender.com/api/alerts/sos', {
+              phone: patientPhone,
+              location: mapsLink
+            });
+            alert("🚨 SOS Sent successfully to your caretaker!");
+          } catch (error) {
+            alert("⚠️ Failed to send SOS. Does your caretaker phone number exist in settings?");
+          } finally {
+            setIsSendingSOS(false);
+          }
+        },
+        (error) => {
+          alert("⚠️ We need location permissions to send an accurate SOS!");
+          setIsSendingSOS(false);
+        }
+      );
+    } else {
+      alert("⚠️ Geolocation is not supported by your browser.");
+      setIsSendingSOS(false);
+    }
+  };
+
   const getLowStockAlerts = () => {
     const alerts = [];
     schedule.forEach(slot => {
       (slot.medications || []).forEach(med => {
-        // Warning triggers if they have 3 or fewer doses left
         if (med.totalStock > 0 && med.totalStock <= (med.qty * 3)) {
           if (!alerts.find(a => a.name === med.name)) {
             alerts.push({ name: med.name, stock: med.totalStock });
@@ -80,7 +113,6 @@ const VisualDashboard = () => {
 
   const lowStockAlerts = getLowStockAlerts();
 
-  // Time Editor Functions
   const openTimeEditor = (slot) => {
     if (!slot.target_time) return; 
     const [timeStr, ampmStr] = slot.target_time.split(' ');
@@ -136,7 +168,7 @@ const VisualDashboard = () => {
         <p className="text-blue-100 mt-2 text-xl">{t.hub}</p>
       </header>
 
-      {/* 🌟 DOCTOR REFILL / LOW STOCK WARNING BANNER */}
+      {/* DOCTOR REFILL / LOW STOCK WARNING BANNER */}
       {lowStockAlerts.length > 0 && (
         <div className="max-w-2xl mx-auto px-4 mt-[-20px] relative z-10">
           <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl shadow-xl p-5 border-4 border-white animate-pulse-once">
@@ -162,7 +194,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* MODAL: ADD REMINDER */}
+      {/* MODALS REMAIN THE SAME... */}
       {showAddReminder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm pt-20 overflow-y-auto">
           <div className="relative w-full max-w-md">
@@ -172,7 +204,6 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* MODAL: SETTINGS */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
@@ -206,11 +237,24 @@ const VisualDashboard = () => {
       <div className="max-w-2xl mx-auto px-4 mt-6">
         <h2 className="text-xl font-bold text-slate-800 mb-4 px-2">{t.quickActions}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <button onClick={() => setShowAddReminder(true)} className="bg-blue-50 hover:bg-blue-100 p-6 rounded-3xl border border-blue-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform md:col-span-1 col-span-2">
+          
+          {/* 🌟 THE NEW SOS BUTTON 🌟 */}
+          <button 
+            onClick={handleSOS} 
+            disabled={isSendingSOS}
+            className={`col-span-2 md:col-span-3 p-6 rounded-3xl border-4 flex flex-col items-center justify-center gap-2 shadow-lg active:scale-95 transition-all ${isSendingSOS ? 'bg-red-400 border-red-500' : 'bg-red-600 border-red-700 hover:bg-red-500 animate-pulse'}`}
+          >
+            <span className="text-5xl mb-1">{isSendingSOS ? "📡" : "🚨"}</span>
+            <span className="text-2xl font-black text-white text-center tracking-widest uppercase">
+              {isSendingSOS ? "Locating..." : t.sos}
+            </span>
+          </button>
+
+          <button onClick={() => setShowAddReminder(true)} className="bg-blue-50 hover:bg-blue-100 p-6 rounded-3xl border border-blue-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">
             <span className="text-5xl mb-1">➕</span><span className="text-sm font-bold text-blue-700 text-center leading-tight">{t.addMed}</span>
           </button>
-          <button onClick={() => navigate('/blood-network')} className="bg-red-50 hover:bg-red-100 p-6 rounded-3xl border border-red-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">
-            <span className="text-5xl mb-1">🩸</span><span className="text-sm font-bold text-red-700 text-center leading-tight">{t.emergency}</span>
+          <button onClick={() => navigate('/blood-network')} className="bg-rose-50 hover:bg-rose-100 p-6 rounded-3xl border border-rose-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">
+            <span className="text-5xl mb-1">🩸</span><span className="text-sm font-bold text-rose-700 text-center leading-tight">{t.emergency}</span>
           </button>
           <button onClick={() => navigate('/family')} className="bg-indigo-50 hover:bg-indigo-100 p-6 rounded-3xl border border-indigo-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">
             <span className="text-5xl mb-1">👨‍👩‍👧‍👦</span><span className="text-sm font-bold text-indigo-700 text-center leading-tight">{t.family}</span>
@@ -218,7 +262,7 @@ const VisualDashboard = () => {
           <button onClick={() => navigate('/find-clinic')} className="bg-emerald-50 hover:bg-emerald-100 p-6 rounded-3xl border border-emerald-100 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">            
             <span className="text-5xl mb-1">🏥</span><span className="text-sm font-bold text-emerald-700 text-center leading-tight">{t.clinic}</span>
           </button>
-          <button onClick={() => setShowSettings(true)} className="bg-slate-100 hover:bg-slate-200 p-6 rounded-3xl border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform">
+          <button onClick={() => setShowSettings(true)} className="bg-slate-100 hover:bg-slate-200 p-6 rounded-3xl border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm active:scale-95 transition-transform md:col-span-2">
             <span className="text-5xl mb-1">⚙️</span><span className="text-sm font-bold text-slate-700 text-center leading-tight">{t.settings}</span>
           </button>
         </div>
@@ -235,8 +279,6 @@ const VisualDashboard = () => {
           </div>
         ) : (
           schedule.map((slot) => {
-            
-            // 🌟 NEW: Check if this entire schedule slot is Out of Stock
             const isOutOfStock = (slot.medications || []).every(med => med.totalStock < med.qty);
 
             return (
@@ -286,7 +328,6 @@ const VisualDashboard = () => {
                         <div className="mt-2 inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-lg font-bold text-lg">
                           {med.qty} {t.pills}
                         </div>
-                        {/* 🌟 NEW: Remaining Stock Display */}
                         <div className={`mt-2 text-sm font-bold ${med.totalStock > 0 ? 'text-slate-500' : 'text-red-500'}`}>
                           Remaining: {med.totalStock} {t.pills}
                         </div>
@@ -297,7 +338,6 @@ const VisualDashboard = () => {
 
                 {/* ACTION BUTTON */}
                 <div className="p-6 bg-white border-t border-slate-50">
-                  {/* 🌟 NEW: If out of stock, disable reminder and show warning */}
                   {isOutOfStock ? (
                     <div className="w-full py-5 text-center rounded-2xl bg-red-100 border-2 border-red-200 text-red-700 font-bold text-2xl uppercase tracking-wide">
                       ❌ Out of Stock

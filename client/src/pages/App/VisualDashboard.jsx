@@ -164,7 +164,7 @@ const VisualDashboard = () => {
         reply = "కడుపు నొప్పికి, గోరువెచ్చని నీరు త్రాగండి. కారం తక్కువగా తినండి. గ్యాస్ అనిపిస్తే యాంటాసిడ్ తీసుకోండి.";
         recommendedMeds = [{ name: "Gelusil / Digene", desc: "గ్యాస్ మరియు ఎసిడిటీ నుండి ఉపశమనానికి." }, { name: "Pudin Hara", desc: "కడుపు నొప్పి మరియు జీర్ణక్రియ కోసం." }, { name: "Eno", desc: "తక్షణ గుండె మంట ఉపశమనం కోసం." }];
       } else if (currentLang === 'hi') {
-        reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो तो एंटासिड ले सकते हैं।";
+        reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो越 तो एंटासिड ले सकते हैं।";
         recommendedMeds = [{ name: "Gelusil / Digene", desc: "गैस और एसिडिटी से तुरंत राहत।" }, { name: "Pudin Hara", desc: "पेट दर्द और पाचन के लिए आयुर्वेदिक दवा।" }, { name: "Eno", desc: "सीने की जलन से तुरंत राहत।" }];
       } else {
         reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
@@ -254,16 +254,60 @@ const VisualDashboard = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  // 🌟 HELPER TO FORMAT ANY TIME SAFELY 🌟
+  const formatDisplayTime = (timeStr) => {
+    if (!timeStr) return "12:00 AM";
+    if (timeStr.includes("AM") || timeStr.includes("PM")) return timeStr;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    let hInt = parseInt(parts[0], 10);
+    const mStr = parts[1];
+    const ampm = hInt >= 12 ? 'PM' : 'AM';
+    if (hInt > 12) hInt -= 12;
+    if (hInt === 0) hInt = 12;
+    return `${hInt.toString().padStart(2, '0')}:${mStr} ${ampm}`;
+  };
+
+  // 🌟 FIXED TIME EDITOR PARSING 🌟
+  const openTimeEditor = (slot) => {
+    let target = slot.target_time || "12:00"; 
+    let hr = "12", min = "00", ampm = "AM";
+
+    if (target.includes("AM") || target.includes("PM")) {
+      const [timePart, ampmPart] = target.split(' ');
+      const [h, m] = timePart.split(':');
+      hr = h; min = m; ampm = ampmPart;
+    } else {
+      const [h, m] = target.split(':');
+      let hInt = parseInt(h, 10);
+      if (!isNaN(hInt)) {
+        if (hInt >= 12) { ampm = "PM"; if (hInt > 12) hInt -= 12; } 
+        else { ampm = "AM"; if (hInt === 0) hInt = 12; }
+        hr = hInt.toString();
+      }
+      min = m || "00";
+    }
+
+    setEditHour(hr.padStart(2, '0'));
+    setEditMinute(min.padStart(2, '0'));
+    setEditAmpm(ampm);
+    setEditingTimeId(slot._id);
+  };
+
+  // 🌟 FIXED SAVING LOGIC (Instant UI Update) 🌟
   const saveCustomTime = async (id) => {
     let h24 = parseInt(editHour, 10);
     if (editAmpm === 'PM' && h24 !== 12) h24 += 12;
     if (editAmpm === 'AM' && h24 === 12) h24 = 0;
     const formatted24h = `${h24.toString().padStart(2, '0')}:${editMinute}`;
+    
+    // Instantly update UI without waiting for backend to avoid blank states!
+    setSchedule(schedule.map(slot => slot._id === id ? { ...slot, target_time: formatted24h } : slot));
+    setEditingTimeId(null);
+    
     try {
-      const response = await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/time`, { newTime: formatted24h });
-      setSchedule(schedule.map(slot => slot._id === id ? { ...slot, target_time: response.data.target_time } : slot));
-      setEditingTimeId(null);
-    } catch (error) { alert("Failed to update time."); }
+      await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/time`, { newTime: formatted24h });
+    } catch (error) { console.error("Failed to sync new time to server."); }
   };
 
   const saveSettings = async (e) => {
@@ -311,24 +355,6 @@ const VisualDashboard = () => {
           <span className="text-lg font-extrabold text-slate-700 group-hover:text-indigo-600 transition-colors">{t.askAi}</span>
         </button>
 
-        {lowStockAlerts.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.04)] p-5 border-l-4 border-orange-500">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-orange-500 text-xl">⚠️</span>
-              <h3 className="text-slate-800 font-bold text-base">{t.refillTitle}</h3>
-            </div>
-            <p className="text-slate-500 text-sm font-medium leading-relaxed mb-3">
-              {t.refillDesc}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {lowStockAlerts.map((alert, i) => (
-                <span key={i} className="bg-orange-50 text-orange-700 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-orange-100">
-                  {alert.name} • {alert.stock} {t.left}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {showVoiceAssistant && (
@@ -359,7 +385,6 @@ const VisualDashboard = () => {
                   
                   <p className="text-indigo-900 font-bold leading-relaxed">{aiResponse}</p>
 
-                  {/* 🌟 CLICKABLE IMAGE SEARCH LINKS (WITH 'A' TAGS!) 🌟 */}
                   {aiMedicines.length > 0 && (
                     <div className="mt-5 w-full bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm text-left">
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -477,7 +502,8 @@ const VisualDashboard = () => {
                     </div>
                   ) : (
                     <button onClick={() => openTimeEditor(slot)} className="text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 bg-indigo-50/50">
-                      {slot.target_time || "12:00 AM"} <span className="text-xs opacity-50">✏️</span>
+                      {/* 🌟 THIS USES THE NEW HELPER TO FORMAT PROPERLY 🌟 */}
+                      {formatDisplayTime(slot.target_time)} <span className="text-xs opacity-50">✏️</span>
                     </button>
                   )}
                 </div>

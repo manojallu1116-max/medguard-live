@@ -18,10 +18,12 @@ const VisualDashboard = () => {
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
+  // 🌟 VOICE ASSISTANT STATE
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [aiResponse, setAiResponse] = useState("");
+  const [aiImage, setAiImage] = useState(null); // 🌟 NEW: State to hold the medicine image!
 
   const [caretakerPhone, setCaretakerPhone] = useState('');
   const [reminderType, setReminderType] = useState('call');
@@ -89,57 +91,107 @@ const VisualDashboard = () => {
       alert("Sorry, your browser doesn't support voice recognition.");
       return;
     }
+    
     const recognition = new SpeechRecognition();
-    recognition.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-IN');
+    recognition.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-US');
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
     
     setIsListening(true);
-    setTranscript(appLang === 'te' ? "వింటున్నాను..." : appLang === 'hi' ? "सुन रहा हूँ..." : "Listening...");
+    setTranscript(appLang === 'te' ? "వింటున్నాను... మాట్లాడండి" : appLang === 'hi' ? "सुन रहा हूँ..." : "Listening...");
     setAiResponse("");
+    setAiImage(null); // Clear previous image
     window.speechSynthesis.cancel(); 
 
     recognition.start();
+
     recognition.onresult = (event) => {
       const text = event.results[0][0].transcript.toLowerCase();
       setTranscript(`"${text}"`);
       generateAiResponse(text);
       setIsListening(false);
     };
-    recognition.onerror = () => {
-      setTranscript(appLang === 'te' ? "సరిగ్గా వినపడలేదు. మళ్ళీ ప్రయత్నించండి." : "Could not hear you. Please try again.");
+
+    recognition.onerror = (event) => {
+      console.error("Speech Recognition Error:", event.error);
+      setTranscript(appLang === 'te' ? "సరిగ్గా వినపడలేదు. మళ్ళీ మైక్ నొక్కండి." : "Could not hear you. Please try again.");
       setIsListening(false);
     };
   };
 
+  // 🌟 AI BRAIN: Now supports Images! 🌟
   const generateAiResponse = (text) => {
     let reply = "";
-    if (text.includes("headache") || text.includes("head") || text.includes("sir dard") || text.includes("सिर दर्द") || text.includes("తలనొప్పి") || text.includes("noppi")) {
+    let image = null;
+    
+    // 1. HEADACHE
+    if (text.includes("headache") || text.includes("head") || text.includes("sir dard") || text.includes("सिर") || text.includes("తలనొప్పి") || text.includes("తల") || text.includes("noppi") || text.includes("tala")) {
+      image = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80"; // Paracetamol blister pack
       if (appLang === 'te') reply = "తలనొప్పికి, నిశ్శబ్దంగా ఉన్న గదిలో విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. నొప్పి ఎక్కువగా ఉంటే పారాసెటమాల్ వేసుకోండి.";
       else if (appLang === 'hi') reply = "सिर दर्द के लिए, आराम करें और पानी पिएं। अगर दर्द ज्यादा है, तो पेरासिटामोल ले सकते हैं।";
       else reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
-    } else if (text.includes("fever") || text.includes("temperature") || text.includes("bukhar") || text.includes("बुखार") || text.includes("జ్వరం") || text.includes("jwaram")) {
-      if (appLang === 'te') reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
-      else if (appLang === 'hi') reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
+    } 
+    // 2. FEVER
+    else if (text.includes("fever") || text.includes("temperature") || text.includes("bukhar") || text.includes("बुखार") || text.includes("జ్వరం") || text.includes("jwaram") || text.includes("jaram")) {
+      image = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80"; // Paracetamol/Dolo pack
+      if (appLang === 'te') reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 (Dolo 650) వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
+      else if (appLang === 'hi') reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 (Dolo 650) ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
       else reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
-    } else if (text.includes("stomach") || text.includes("pain") || text.includes("pet dard") || text.includes("पेट दर्द") || text.includes("కడుపు నొప్పి") || text.includes("kadupu")) {
+    } 
+    // 3. STOMACH ACHE
+    else if (text.includes("stomach") || text.includes("pain") || text.includes("pet") || text.includes("पेट") || text.includes("కడుపు") || text.includes("kadupu")) {
+      image = "https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=400&q=80"; // Antacid bottle
       if (appLang === 'te') reply = "కడుపు నొప్పికి, గోరువెచ్చని నీరు త్రాగండి. కారం తక్కువగా తినండి. గ్యాస్ అనిపిస్తే యాంటాసిడ్ తీసుకోండి.";
       else if (appLang === 'hi') reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो तो एंटासिड ले सकते हैं।";
       else reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
-    } else if (text.includes("cold") || text.includes("cough") || text.includes("khasi") || text.includes("खांसी") || text.includes("దగ్గు") || text.includes("జలుబు")) {
+    } 
+    // 4. COLD & COUGH
+    else if (text.includes("cold") || text.includes("cough") || text.includes("khasi") || text.includes("खांसी") || text.includes("దగ్గు") || text.includes("జలుబు") || text.includes("daggu") || text.includes("jalubu")) {
+      image = "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=400&q=80"; // Cough syrup / remedies
       if (appLang === 'te') reply = "జలుబు లేదా దగ్గు కోసం, ఆవిరి పట్టుకోండి మరియు గోరువెచ్చని ఉప్పు నీటితో పుక్కిలించండి. అల్లం మరియు తేనె కూడా మంచిది.";
       else if (appLang === 'hi') reply = "सर्दी या खांसी के लिए, भाप लें और गर्म नमक पानी से गरारे करें। अदरक और शहद भी आराम देगा।";
       else reply = "For a cold or cough, do steam inhalation and gargle with warm salt water. Honey and ginger can also soothe your throat.";
-    } else if (text.includes("cut") || text.includes("bleeding") || text.includes("blood") || text.includes("खून") || text.includes("రక్తం") || text.includes("గాయం")) {
+    } 
+    // 5. WOUND / BLEEDING
+    else if (text.includes("cut") || text.includes("bleeding") || text.includes("blood") || text.includes("खून") || text.includes("రక్తం") || text.includes("గాయం") || text.includes("debba") || text.includes("raktam") || text.includes("gayam")) {
+      image = "https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=400&q=80"; // Bandage/First aid
       if (appLang === 'te') reply = "గాయాన్ని వెంటనే శుభ్రమైన నీటితో కడగండి, యాంటిసెప్టిక్ రాయండి మరియు కట్టు కట్టండి. రక్తం ఆగకపోతే డాక్టర్‌ను కలవండి.";
       else if (appLang === 'hi') reply = "घाव को तुरंत साफ पानी से धो लें, एंटीसेप्टिक लगाएं और पट्टी बांधें। खून न रुके तो डॉक्टर के पास जाएं।";
       else reply = "Wash the wound immediately with clean water, apply an antiseptic, and bandage it tightly. Seek medical help if the bleeding does not stop.";
-    } else {
+    } 
+    // DEFAULT FALLBACK
+    else {
+      image = null; // No image for generic advice
       if (appLang === 'te') reply = "నేను విశ్రాంతి తీసుకోవాలని మరియు ద్రవాలు త్రాగాలని సిఫార్సు చేస్తున్నాను. లక్షణాలు తగ్గకపోతే, దయచేసి వైద్యుడిని సంప్రదించండి.";
       else if (appLang === 'hi') reply = "मैं आराम करने और पानी पीने की सलाह देता हूं। यदि समस्या बनी रहती है, तो कृपया डॉक्टर से परामर्श लें।";
       else reply = "I recommend resting and drinking plenty of fluids. If symptoms persist, please consult a doctor.";
     }
+
     setAiResponse(reply);
+    setAiImage(image); // Set the image state!
+
+    // Speak the response in the correct language!
     const utterance = new SpeechSynthesisUtterance(reply);
-    utterance.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-IN');
+    
+    // Find a native voice if available on the device
+    const voices = window.speechSynthesis.getVoices();
+    let selectedVoice = null;
+    
+    if (appLang === 'te') {
+      utterance.lang = 'te-IN';
+      selectedVoice = voices.find(v => v.lang.includes('te'));
+    } else if (appLang === 'hi') {
+      utterance.lang = 'hi-IN';
+      selectedVoice = voices.find(v => v.lang.includes('hi'));
+    } else {
+      utterance.lang = 'en-IN';
+      selectedVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'en-US');
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    
     window.speechSynthesis.speak(utterance);
   };
 
@@ -200,7 +252,7 @@ const VisualDashboard = () => {
   return (
     <div className="min-h-screen bg-[#F5F7FA] font-sans pb-24 relative"> 
       
-      {/* 🌟 NEW SLEEK HEADER 🌟 */}
+      {/* HEADER */}
       <header className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-6 md:p-8 rounded-b-[2.5rem] shadow-[0_10px_30px_rgba(79,70,229,0.2)] relative z-20 pb-12">
         <div className="absolute top-6 right-6 flex bg-black/10 rounded-full p-1 border border-white/20 backdrop-blur-sm">
           <button onClick={() => handleLanguageChange('en')} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${appLang === 'en' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-50 hover:text-white'}`}>EN</button>
@@ -211,10 +263,9 @@ const VisualDashboard = () => {
         <p className="text-blue-100 mt-2 text-sm font-medium opacity-90">{t.hub}</p>
       </header>
 
-      {/* 🌟 ACTION CARDS FLOATING OVER HEADER 🌟 */}
+      {/* ACTION CARDS */}
       <div className="max-w-2xl mx-auto px-5 mt-[-2rem] relative z-30 flex flex-col gap-4">
         
-        {/* REFINED SOS BUTTON */}
         <button 
           onClick={handleSOS} 
           disabled={isSendingSOS}
@@ -226,7 +277,6 @@ const VisualDashboard = () => {
           </span>
         </button>
 
-        {/* REFINED AI ASSISTANT BUTTON */}
         <button 
           onClick={() => setShowVoiceAssistant(true)} 
           className="w-full py-4 px-6 rounded-2xl bg-white border border-indigo-50 flex items-center justify-center gap-3 shadow-[0_8px_20px_rgba(0,0,0,0.04)] active:scale-95 transition-all group hover:border-indigo-100"
@@ -237,7 +287,6 @@ const VisualDashboard = () => {
           <span className="text-lg font-extrabold text-slate-700 group-hover:text-indigo-600 transition-colors">Ask AI Assistant</span>
         </button>
 
-        {/* REFINED REFILL NOTIFICATION */}
         {lowStockAlerts.length > 0 && (
           <div className="bg-white rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.04)] p-5 border-l-4 border-orange-500">
             <div className="flex items-center gap-2 mb-2">
@@ -258,7 +307,7 @@ const VisualDashboard = () => {
         )}
       </div>
 
-      {/* VOICE ASSISTANT MODAL */}
+      {/* VOICE ASSISTANT MODAL WITH IMAGE */}
       {showVoiceAssistant && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
@@ -280,7 +329,15 @@ const VisualDashboard = () => {
               </p>
 
               {aiResponse && (
-                <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl w-full text-center">
+                <div className="mt-6 p-5 bg-indigo-50 border border-indigo-100 rounded-2xl w-full flex flex-col items-center text-center animate-fade-in">
+                  {/* 🌟 THE MEDICINE IMAGE RENDERS HERE 🌟 */}
+                  {aiImage && (
+                    <img 
+                      src={aiImage} 
+                      alt="Recommended Medicine" 
+                      className="w-32 h-32 object-cover rounded-xl mb-4 shadow-md border-4 border-white"
+                    />
+                  )}
                   <p className="text-indigo-900 font-bold leading-relaxed">{aiResponse}</p>
                 </div>
               )}
@@ -289,7 +346,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* OTHER MODALS... */}
+      {/* MODALS */}
       {showAddReminder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm pt-20 overflow-y-auto">
           <div className="relative w-full max-w-md">
@@ -328,7 +385,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* REFINED SCHEDULE LIST */}
+      {/* SCHEDULE LIST */}
       <main className="p-5 mt-2 max-w-2xl mx-auto space-y-5">
         <h2 className="text-sm font-black text-slate-400 tracking-widest uppercase ml-1">{t.schedule}</h2>
         
@@ -343,11 +400,8 @@ const VisualDashboard = () => {
 
             return (
               <div key={slot._id} className={`bg-white rounded-[1.5rem] shadow-[0_4px_15px_rgba(0,0,0,0.03)] overflow-hidden border border-slate-100 mb-5 relative`}>
-                
-                {/* Status Indicator Bar */}
                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${slot.status === 'taken' ? 'bg-green-500' : isOutOfStock ? 'bg-red-500' : 'bg-amber-400'}`}></div>
 
-                {/* TIME HEADER */}
                 <div className="p-4 pl-6 bg-white flex justify-between items-center border-b border-slate-50">
                   <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
                     {slot.time_slot === "Morning" ? "☀️" : slot.time_slot === "Afternoon" ? "🌤️" : "🌙"} {slot.time_slot}
@@ -377,7 +431,6 @@ const VisualDashboard = () => {
                   )}
                 </div>
 
-                {/* PILLS */}
                 <div className="p-4 pl-6 space-y-3">
                   {(slot.medications || []).map((med, idx) => (
                     <div key={idx} className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
@@ -397,7 +450,6 @@ const VisualDashboard = () => {
                   ))}
                 </div>
 
-                {/* ACTION BUTTON */}
                 <div className="p-4 pl-6 pt-1">
                   {isOutOfStock ? (
                     <div className="w-full py-3.5 text-center rounded-xl bg-red-50 border border-red-100 text-red-600 font-bold tracking-wide">

@@ -162,39 +162,39 @@ const VisualDashboard = () => {
       emoji = "🤢"; 
       if (appLang === 'te') {
         reply = "కడుపు నొప్పికి, గోరువెచ్చని నీరు త్రాగండి. కారం తక్కువగా తినండి. గ్యాస్ అనిపిస్తే యాంటాసిడ్ తీసుకోండి.";
-        recommendedMeds = [{ name: "Gelusil / Digene", desc: "గ్యాస్ మరియు ఎసిడిటీ నుండి ఉపశమనానికి." }, { name: "Pudin Hara", desc: "కడుపు నొప్పి మరియు జీర్ణక్రియ కోసం." }, { name: "Eno", desc: "తక్షణ గుండె మంట ఉపశమనం కోసం." }];
+        recommendedMeds = [{ name: "Gelusil", desc: "గ్యాస్ మరియు ఎసిడిటీ నుండి ఉపశమనానికి." }, { name: "Pudin Hara", desc: "కడుపు నొప్పి మరియు జీర్ణక్రియ కోసం." }, { name: "Eno", desc: "తక్షణ గుండె మంట ఉపశమనం కోసం." }];
       } else if (appLang === 'hi') {
         reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो तो एंटासिड ले सकते हैं।";
-        recommendedMeds = [{ name: "Gelusil / Digene", desc: "गैस और एसिडिटी से तुरंत राहत।" }, { name: "Pudin Hara", desc: "पेट दर्द और पाचन के लिए आयुर्वेदिक दवा।" }, { name: "Eno", desc: "सीने की जलन से तुरंत राहत।" }];
+        recommendedMeds = [{ name: "Gelusil", desc: "गैस और एसिडिटी से तुरंत राहत।" }, { name: "Pudin Hara", desc: "पेट दर्द और पाचन के लिए आयुर्वेदिक दवा।" }, { name: "Eno", desc: "सीने की जलन से तुरंत राहत।" }];
       } else {
         reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
-        recommendedMeds = [{ name: "Gelusil / Digene", desc: "Antacid liquid for quick gas and acidity relief." }, { name: "Pudin Hara", desc: "Ayurvedic pearls for stomach ache and digestion." }, { name: "Eno", desc: "Fruit salt for instant heartburn relief." }];
+        recommendedMeds = [{ name: "Gelusil", desc: "Antacid liquid for quick gas and acidity relief." }, { name: "Pudin Hara", desc: "Ayurvedic pearls for stomach ache and digestion." }, { name: "Eno", desc: "Fruit salt for instant heartburn relief." }];
       }
     } 
     else if (isMatch(["headache", "head ache", "sir dard", "सिर", "తలనొప్పి", "తల నొప్పి", "tala", "thalanoppi", "noppi"])) {
       emoji = "🤕"; 
       if (appLang === 'te') {
         reply = "తలనొప్పికి, నిశ్శబ్దంగా ఉన్న గదిలో విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. నొప్పి ఎక్కువగా ఉంటే పారాసెటమాల్ వేసుకోండి.";
-        recommendedMeds = [{ name: "Saridon", desc: "తీవ్రమైన తలనొప్పికి తక్షణ నివారణ." }, { name: "Crocin Pain Relief", desc: "సాధారణ తలనొప్పికి పారాసెటమాల్ టాబ్లెట్." }, { name: "Disprin", desc: "తక్షణ ఉపశమనం కోసం నీటిలో కరిగే టాబ్లెట్." }];
+        recommendedMeds = [{ name: "Saridon", desc: "తీవ్రమైన తలనొప్పికి తక్షణ నివారణ." }, { name: "Crocin", desc: "సాధారణ తలనొప్పికి పారాసెటమాల్ టాబ్లెట్." }, { name: "Disprin", desc: "తక్షణ ఉపశమనం కోసం నీటిలో కరిగే టాబ్లెట్." }];
       } else if (appLang === 'hi') {
         reply = "सिर दर्द के लिए, आराम करें और पानी पिएं। अगर दर्द ज्यादा है, तो पेरासिटामोल ले सकते हैं।";
-        recommendedMeds = [{ name: "Saridon", desc: "गंभीर सिरदर्द के लिए तेजी से काम करने वाली दवा।" }, { name: "Crocin Pain Relief", desc: "सामान्य सिरदर्द के लिए पेरासिटामोल गोली।" }, { name: "Disprin", desc: "तुरंत राहत के लिए पानी में घुलनशील गोली।" }];
+        recommendedMeds = [{ name: "Saridon", desc: "गंभीर सिरदर्द के लिए तेजी से काम करने वाली दवा।" }, { name: "Crocin", desc: "सामान्य सिरदर्द के लिए पेरासिटामोल गोली।" }, { name: "Disprin", desc: "तुरंत राहत के लिए पानी में घुलनशील गोली।" }];
       } else {
         reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
-        recommendedMeds = [{ name: "Saridon", desc: "Fast-acting remedy for severe headaches." }, { name: "Crocin Pain Relief", desc: "Paracetamol-based tablet for standard headaches." }, { name: "Disprin", desc: "Water-soluble tablet for instant relief." }];
+        recommendedMeds = [{ name: "Saridon", desc: "Fast-acting remedy for severe headaches." }, { name: "Crocin", desc: "Paracetamol-based tablet for standard headaches." }, { name: "Disprin", desc: "Water-soluble tablet for instant relief." }];
       }
     } 
     else if (isMatch(["fever", "temperature", "bukhar", "बुखार", "జ్వరం", "jwaram", "jaram", "vediga"])) {
       emoji = "🤒"; 
       if (appLang === 'te') {
         reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
-        recommendedMeds = [{ name: "Dolo 650", desc: "అధిక జ్వరం మరియు ఒళ్ళు నొప్పులకు ఉత్తమమైనది." }, { name: "Paracetamol 500mg", desc: "జ్వరం తగ్గించడానికి సాధారణ మందు." }, { name: "Calpol 500", desc: "జ్వరానికి ప్రత్యామ్నాయ మందు." }];
+        recommendedMeds = [{ name: "Dolo 650", desc: "అధిక జ్వరం మరియు ఒళ్ళు నొప్పులకు ఉత్తమమైనది." }, { name: "Paracetamol", desc: "జ్వరం తగ్గించడానికి సాధారణ మందు." }, { name: "Calpol", desc: "జ్వరానికి ప్రత్యామ్నాయ మందు." }];
       } else if (appLang === 'hi') {
         reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
-        recommendedMeds = [{ name: "Dolo 650", desc: "तेज बुखार और बदन दर्द के लिए सबसे अच्छा।" }, { name: "Paracetamol 500mg", desc: "मानक बुखार कम करने वाली दवा।" }, { name: "Calpol 500", desc: "बुखार के लिए वैकल्पिक पेरासिटामोल गोली।" }];
+        recommendedMeds = [{ name: "Dolo 650", desc: "तेज बुखार और बदन दर्द के लिए सबसे अच्छा।" }, { name: "Paracetamol", desc: "मानक बुखार कम करने वाली दवा।" }, { name: "Calpol", desc: "बुखार के लिए वैकल्पिक पेरासिटामोल गोली।" }];
       } else {
         reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
-        recommendedMeds = [{ name: "Dolo 650", desc: "Best for high fever and body ache." }, { name: "Paracetamol 500mg", desc: "Standard fever reducer." }, { name: "Calpol 500", desc: "Alternative paracetamol tablet for fever." }];
+        recommendedMeds = [{ name: "Dolo 650", desc: "Best for high fever and body ache." }, { name: "Paracetamol", desc: "Standard fever reducer." }, { name: "Calpol", desc: "Alternative paracetamol tablet for fever." }];
       }
     } 
     else if (isMatch(["cold", "cough", "khasi", "khaasi", "खांसी", "దగ్గు", "జలుబు", "daggu", "jalubu", "sneeze", "tummulu"])) {
@@ -341,6 +341,7 @@ const VisualDashboard = () => {
                   
                   <p className="text-indigo-900 font-bold leading-relaxed">{aiResponse}</p>
 
+                  {/* 🌟 CLICKABLE IMAGE SEARCH LINKS 🌟 */}
                   {aiMedicines.length > 0 && (
                     <div className="mt-5 w-full bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm text-left">
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -348,15 +349,24 @@ const VisualDashboard = () => {
                       </p>
                       <div className="flex flex-col gap-2.5">
                         {aiMedicines.map((med, idx) => (
-                          <div key={idx} className="bg-indigo-50/50 border border-indigo-100 p-3 rounded-xl flex items-center gap-3">
+                          <a 
+                            key={idx} 
+                            href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(med.name + " medicine")}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-indigo-50/50 border border-indigo-100 p-3 rounded-xl flex items-center gap-3 hover:bg-indigo-100 transition-colors cursor-pointer"
+                          >
                             <div className="bg-white w-10 h-10 rounded-full shadow-sm flex items-center justify-center text-xl shrink-0 border border-slate-100">
                               💊
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <p className="font-bold text-indigo-900 text-sm leading-tight">{med.name}</p>
                               <p className="text-[10px] font-bold text-slate-500 mt-0.5 leading-tight">{med.desc}</p>
                             </div>
-                          </div>
+                            <div className="text-indigo-400 opacity-60">
+                              🖼️
+                            </div>
+                          </a>
                         ))}
                       </div>
                     </div>
@@ -374,35 +384,6 @@ const VisualDashboard = () => {
           <div className="relative w-full max-w-md">
             <button onClick={() => setShowAddReminder(false)} className="absolute -top-3 -right-3 z-50 bg-red-500 text-white rounded-full w-10 h-10 font-bold shadow-lg">✕</button>
             <AddReminder patientPhone={patientPhone} onSuccess={() => { setShowAddReminder(false); fetchSchedule(); }} />
-          </div>
-        </div>
-      )}
-
-      {showSettings && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
-            <h2 className="text-3xl font-bold text-slate-800 mb-2">{t.settings}</h2>
-            <form onSubmit={saveSettings} className="space-y-6 mt-4">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <label className="block text-slate-700 font-bold mb-2">Reminder Preference</label>
-                <select value={reminderType} onChange={(e) => setReminderType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-white text-lg font-bold">
-                  <option value="call">📞 Automated Voice Call</option>
-                  <option value="notification">📱 Push Notification Only</option>
-                  <option value="none">🔕 Do Not Disturb</option>
-                </select>
-              </div>
-              <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
-                <label className="block text-red-800 font-bold mb-2">Emergency Caretaker Phone</label>
-                <input type="tel" placeholder="e.g. 9876543210" value={caretakerPhone} onChange={(e) => setCaretakerPhone(e.target.value)} className="w-full p-3 border border-red-200 rounded-xl bg-white text-lg font-mono font-bold" />
-              </div>
-              <div className="flex gap-4 pt-2">
-                <button type="button" onClick={() => setShowSettings(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
-                <button type="submit" disabled={isSavingSettings} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg">{isSavingSettings ? "Saving..." : "Save Config"}</button>
-              </div>
-              <button type="button" onClick={handleLogout} className="w-full py-4 mt-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2">
-                <span className="text-xl">🚪</span> Secure Logout
-              </button>
-            </form>
           </div>
         </div>
       )}

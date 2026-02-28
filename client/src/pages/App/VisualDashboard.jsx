@@ -92,6 +92,7 @@ const VisualDashboard = () => {
     }
     
     const recognition = new SpeechRecognition();
+    // CRITICAL: Tells the browser which language to listen for based on your top-right toggle!
     recognition.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-US');
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -105,9 +106,9 @@ const VisualDashboard = () => {
     recognition.start();
 
     recognition.onresult = (event) => {
-      // Clean the text to make matching completely foolproof
+      // Clean punctuation so matching never fails
       let text = event.results[0][0].transcript.toLowerCase();
-      text = text.replace(/[.,?!]/g, ""); // Remove punctuation
+      text = text.replace(/[.,?!]/g, ""); 
       
       setTranscript(`"${text}"`);
       generateAiResponse(text);
@@ -120,44 +121,49 @@ const VisualDashboard = () => {
     };
   };
 
-  // 🌟 SUPER-CHARGED MULTILINGUAL MATCHER 🌟
+  // 🌟 BULLETPROOF MULTILINGUAL MATCHER 🌟
   const generateAiResponse = (text) => {
     let reply = "";
     let image = null;
     
-    // Helper function to check if ANY of the words exist in the spoken text
     const isMatch = (keywords) => keywords.some(word => text.includes(word));
 
-    if (isMatch(["headache", "head ache", "head", "sir dard", "sir", "सिर", "తలనొప్పి", "తల", "noppi", "tala", "thalanoppi"])) {
-      image = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Paracetamol_tablets.jpg/640px-Paracetamol_tablets.jpg"; 
-      if (appLang === 'te') reply = "తలనొప్పికి, నిశ్శబ్దంగా ఉన్న గదిలో విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. నొప్పి ఎక్కువగా ఉంటే పారాసెటమాల్ వేసుకోండి.";
-      else if (appLang === 'hi') reply = "सिर दर्द के लिए, आराम करें और पानी पिएं। अगर दर्द ज्यादा है, तो पेरासिटामोल ले सकते हैं।";
-      else reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
-    } 
-    else if (isMatch(["fever", "temperature", "bukhar", "बुखार", "జ్వరం", "jwaram", "jaram", "jharam", "vediga"])) {
-      image = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Paracetamol_tablets.jpg/640px-Paracetamol_tablets.jpg"; 
-      if (appLang === 'te') reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
-      else if (appLang === 'hi') reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
-      else reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
-    } 
-    else if (isMatch(["stomach", "pain", "pet", "पेट", "కడుపు", "kadupu", "kadupulo", "acidity", "gas"])) {
+    // 1. STOMACH ACHE (Must check before headache to avoid overlap!)
+    if (isMatch(["stomach", "pet dard", "पेट", "కడుపు", "కడుపునొప్పి", "kadupu", "kadupulo", "acidity", "gas"])) {
       image = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Pill_bottle_and_pills.jpg/640px-Pill_bottle_and_pills.jpg"; 
       if (appLang === 'te') reply = "కడుపు నొప్పికి, గోరువెచ్చని నీరు త్రాగండి. కారం తక్కువగా తినండి. గ్యాస్ అనిపిస్తే యాంటాసిడ్ తీసుకోండి.";
       else if (appLang === 'hi') reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो तो एंटासिड ले सकते हैं।";
       else reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
     } 
-    else if (isMatch(["cold", "cough", "khasi", "khaasi", "खांसी", "దగ్గు", "జలుబు", "daggu", "jalubu", "sneeze"])) {
+    // 2. HEADACHE
+    else if (isMatch(["headache", "head ache", "sir dard", "सिर", "తలనొప్పి", "తల నొప్పి", "tala", "thalanoppi"])) {
+      image = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Paracetamol_tablets.jpg/640px-Paracetamol_tablets.jpg"; 
+      if (appLang === 'te') reply = "తలనొప్పికి, నిశ్శబ్దంగా ఉన్న గదిలో విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. నొప్పి ఎక్కువగా ఉంటే పారాసెటమాల్ వేసుకోండి.";
+      else if (appLang === 'hi') reply = "सिर दर्द के लिए, आराम करें और पानी पिएं। अगर दर्द ज्यादा है, तो पेरासिटामोल ले सकते हैं।";
+      else reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
+    } 
+    // 3. FEVER
+    else if (isMatch(["fever", "temperature", "bukhar", "बुखार", "జ్వరం", "jwaram", "jaram", "vediga"])) {
+      image = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Paracetamol_tablets.jpg/640px-Paracetamol_tablets.jpg"; 
+      if (appLang === 'te') reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 (Dolo 650) వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
+      else if (appLang === 'hi') reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 (Dolo 650) ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
+      else reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
+    } 
+    // 4. COLD & COUGH
+    else if (isMatch(["cold", "cough", "khasi", "khaasi", "खांसी", "దగ్గు", "జలుబు", "daggu", "jalubu", "sneeze", "tummulu"])) {
       image = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cough_Medicine_in_Measuring_Cup.jpg/640px-Cough_Medicine_in_Measuring_Cup.jpg"; 
       if (appLang === 'te') reply = "జలుబు లేదా దగ్గు కోసం, ఆవిరి పట్టుకోండి మరియు గోరువెచ్చని ఉప్పు నీటితో పుక్కిలించండి. అల్లం మరియు తేనె కూడా మంచిది.";
       else if (appLang === 'hi') reply = "सर्दी या खांसी के लिए, भाप लें और गर्म नमक पानी से गरारे करें। अदरक और शहद भी आराम देगा।";
       else reply = "For a cold or cough, do steam inhalation and gargle with warm salt water. Honey and ginger can also soothe your throat.";
     } 
+    // 5. WOUND / BLEEDING
     else if (isMatch(["cut", "bleeding", "blood", "khoon", "खून", "రక్తం", "గాయం", "debba", "raktam", "gayam"])) {
       image = "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Adhesive_bandage_-_20111124.jpg/640px-Adhesive_bandage_-_20111124.jpg"; 
       if (appLang === 'te') reply = "గాయాన్ని వెంటనే శుభ్రమైన నీటితో కడగండి, యాంటిసెప్టిక్ రాయండి మరియు కట్టు కట్టండి. రక్తం ఆగకపోతే డాక్టర్‌ను కలవండి.";
       else if (appLang === 'hi') reply = "घाव को तुरंत साफ पानी से धो लें, एंटीसेप्टिक लगाएं और पट्टी बांधें। खून न रुके तो डॉक्टर के पास जाएं।";
       else reply = "Wash the wound immediately with clean water, apply an antiseptic, and bandage it tightly. Seek medical help if the bleeding does not stop.";
     } 
+    // DEFAULT FALLBACK
     else {
       image = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Pills_1.jpg/640px-Pills_1.jpg"; 
       if (appLang === 'te') reply = "నేను విశ్రాంతి తీసుకోవాలని మరియు ద్రవాలు త్రాగాలని సిఫార్సు చేస్తున్నాను. లక్షణాలు తగ్గకపోతే, దయచేసి వైద్యుడిని సంప్రదించండి.";
@@ -299,7 +305,7 @@ const VisualDashboard = () => {
         )}
       </div>
 
-      {/* VOICE ASSISTANT MODAL WITH ACTUAL PHOTOS */}
+      {/* VOICE ASSISTANT MODAL */}
       {showVoiceAssistant && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
@@ -322,8 +328,6 @@ const VisualDashboard = () => {
 
               {aiResponse && (
                 <div className="mt-6 p-5 bg-indigo-50 border border-indigo-100 rounded-2xl w-full flex flex-col items-center text-center animate-fade-in">
-                  
-                  {/* ACTUAL MEDICINE PHOTO RENDERS HERE */}
                   {aiImage && (
                     <img 
                       src={aiImage} 
@@ -331,7 +335,6 @@ const VisualDashboard = () => {
                       className="w-full h-36 object-cover rounded-xl mb-4 shadow-md border border-indigo-200"
                     />
                   )}
-                  
                   <p className="text-indigo-900 font-bold leading-relaxed">{aiResponse}</p>
                 </div>
               )}

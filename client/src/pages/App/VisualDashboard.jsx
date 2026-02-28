@@ -15,28 +15,23 @@ const VisualDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingSOS, setIsSendingSOS] = useState(false); 
   
-  // Modals
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
-  // 🌟 NEW: Voice Assistant State
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [aiResponse, setAiResponse] = useState("");
 
-  // Settings State
   const [caretakerPhone, setCaretakerPhone] = useState('');
   const [reminderType, setReminderType] = useState('call');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  // Time Editor State
   const [editingTimeId, setEditingTimeId] = useState(null);
   const [editHour, setEditHour] = useState('12');
   const [editMinute, setEditMinute] = useState('00');
   const [editAmpm, setEditAmpm] = useState('AM');
 
-  // Language
   const [appLang, setAppLang] = useState(localStorage.getItem('appLang') || 'en');
   const t = translations[appLang] || translations['en'];
   
@@ -70,7 +65,6 @@ const VisualDashboard = () => {
 
   const handleSOS = () => {
     setIsSendingSOS(true);
-    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -89,57 +83,63 @@ const VisualDashboard = () => {
     }
   };
 
-  // 🌟 NEW: Voice Assistant Logic
   const handleVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Sorry, your browser doesn't support voice recognition.");
       return;
     }
-    
     const recognition = new SpeechRecognition();
     recognition.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-IN');
     
     setIsListening(true);
-    setTranscript("Listening...");
+    setTranscript(appLang === 'te' ? "వింటున్నాను..." : appLang === 'hi' ? "सुन रहा हूँ..." : "Listening...");
     setAiResponse("");
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    window.speechSynthesis.cancel(); 
 
     recognition.start();
-
     recognition.onresult = (event) => {
       const text = event.results[0][0].transcript.toLowerCase();
-      setTranscript(`You said: "${text}"`);
+      setTranscript(`"${text}"`);
       generateAiResponse(text);
       setIsListening(false);
     };
-
     recognition.onerror = () => {
-      setTranscript("Could not hear you clearly. Please tap the mic and try again.");
+      setTranscript(appLang === 'te' ? "సరిగ్గా వినపడలేదు. మళ్ళీ ప్రయత్నించండి." : "Could not hear you. Please try again.");
       setIsListening(false);
     };
   };
 
   const generateAiResponse = (text) => {
-    let reply = "I recommend resting and drinking plenty of fluids. If symptoms persist, please consult a doctor.";
-    
-    if (text.includes("headache") || text.includes("head") || text.includes("sir dard")) {
-      reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
-    } else if (text.includes("fever") || text.includes("temperature") || text.includes("bukhar")) {
-      reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
-    } else if (text.includes("stomach") || text.includes("pain") || text.includes("pet dard")) {
-      reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
-    } else if (text.includes("cold") || text.includes("cough") || text.includes("khasi")) {
-      reply = "For a cold or cough, do steam inhalation and gargle with warm salt water. Honey and ginger can also soothe your throat.";
-    } else if (text.includes("cut") || text.includes("bleeding") || text.includes("blood")) {
-      reply = "Wash the wound immediately with clean water, apply an antiseptic, and bandage it tightly. Seek medical help if the bleeding does not stop.";
+    let reply = "";
+    if (text.includes("headache") || text.includes("head") || text.includes("sir dard") || text.includes("सिर दर्द") || text.includes("తలనొప్పి") || text.includes("noppi")) {
+      if (appLang === 'te') reply = "తలనొప్పికి, నిశ్శబ్దంగా ఉన్న గదిలో విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. నొప్పి ఎక్కువగా ఉంటే పారాసెటమాల్ వేసుకోండి.";
+      else if (appLang === 'hi') reply = "सिर दर्द के लिए, आराम करें और पानी पिएं। अगर दर्द ज्यादा है, तो पेरासिटामोल ले सकते हैं।";
+      else reply = "For a headache, try resting in a quiet dark room and drinking a glass of water. If severe, a basic painkiller like Paracetamol can help.";
+    } else if (text.includes("fever") || text.includes("temperature") || text.includes("bukhar") || text.includes("बुखार") || text.includes("జ్వరం") || text.includes("jwaram")) {
+      if (appLang === 'te') reply = "జ్వరానికి, బాగా విశ్రాంతి తీసుకోండి మరియు నీరు త్రాగండి. జ్వరం తగ్గడానికి డోలో 650 వేసుకోండి. మూడు రోజుల కంటే ఎక్కువ ఉంటే డాక్టర్‌ను సంప్రదించండి.";
+      else if (appLang === 'hi') reply = "बुखार के लिए, आराम करें और पानी पिएं। आप डोलो 650 ले सकते हैं। 3 दिन से ज्यादा हो तो डॉक्टर को दिखाएं।";
+      else reply = "For a fever, get plenty of rest and stay hydrated. You can take Dolo 650 to bring the temperature down. See a doctor if it lasts over 3 days.";
+    } else if (text.includes("stomach") || text.includes("pain") || text.includes("pet dard") || text.includes("पेट दर्द") || text.includes("కడుపు నొప్పి") || text.includes("kadupu")) {
+      if (appLang === 'te') reply = "కడుపు నొప్పికి, గోరువెచ్చని నీరు త్రాగండి. కారం తక్కువగా తినండి. గ్యాస్ అనిపిస్తే యాంటాసిడ్ తీసుకోండి.";
+      else if (appLang === 'hi') reply = "पेट दर्द के लिए, गर्म पानी पिएं। मसालेदार खाना न खाएं। एसिडिटी हो तो एंटासिड ले सकते हैं।";
+      else reply = "For a stomach ache, drink warm water or chamomile tea. Avoid spicy foods. An antacid might help if it feels like acidity.";
+    } else if (text.includes("cold") || text.includes("cough") || text.includes("khasi") || text.includes("खांसी") || text.includes("దగ్గు") || text.includes("జలుబు")) {
+      if (appLang === 'te') reply = "జలుబు లేదా దగ్గు కోసం, ఆవిరి పట్టుకోండి మరియు గోరువెచ్చని ఉప్పు నీటితో పుక్కిలించండి. అల్లం మరియు తేనె కూడా మంచిది.";
+      else if (appLang === 'hi') reply = "सर्दी या खांसी के लिए, भाप लें और गर्म नमक पानी से गरारे करें। अदरक और शहद भी आराम देगा।";
+      else reply = "For a cold or cough, do steam inhalation and gargle with warm salt water. Honey and ginger can also soothe your throat.";
+    } else if (text.includes("cut") || text.includes("bleeding") || text.includes("blood") || text.includes("खून") || text.includes("రక్తం") || text.includes("గాయం")) {
+      if (appLang === 'te') reply = "గాయాన్ని వెంటనే శుభ్రమైన నీటితో కడగండి, యాంటిసెప్టిక్ రాయండి మరియు కట్టు కట్టండి. రక్తం ఆగకపోతే డాక్టర్‌ను కలవండి.";
+      else if (appLang === 'hi') reply = "घाव को तुरंत साफ पानी से धो लें, एंटीसेप्टिक लगाएं और पट्टी बांधें। खून न रुके तो डॉक्टर के पास जाएं।";
+      else reply = "Wash the wound immediately with clean water, apply an antiseptic, and bandage it tightly. Seek medical help if the bleeding does not stop.";
+    } else {
+      if (appLang === 'te') reply = "నేను విశ్రాంతి తీసుకోవాలని మరియు ద్రవాలు త్రాగాలని సిఫార్సు చేస్తున్నాను. లక్షణాలు తగ్గకపోతే, దయచేసి వైద్యుడిని సంప్రదించండి.";
+      else if (appLang === 'hi') reply = "मैं आराम करने और पानी पीने की सलाह देता हूं। यदि समस्या बनी रहती है, तो कृपया डॉक्टर से परामर्श लें।";
+      else reply = "I recommend resting and drinking plenty of fluids. If symptoms persist, please consult a doctor.";
     }
-
     setAiResponse(reply);
-
-    // Speak the response back out loud!
     const utterance = new SpeechSynthesisUtterance(reply);
-    utterance.lang = 'en-IN';
+    utterance.lang = appLang === 'hi' ? 'hi-IN' : (appLang === 'te' ? 'te-IN' : 'en-IN');
     window.speechSynthesis.speak(utterance);
   };
 
@@ -172,7 +172,6 @@ const VisualDashboard = () => {
     if (editAmpm === 'PM' && h24 !== 12) h24 += 12;
     if (editAmpm === 'AM' && h24 === 12) h24 = 0;
     const formatted24h = `${h24.toString().padStart(2, '0')}:${editMinute}`;
-    
     try {
       const response = await axios.patch(`https://medguard-backend-rwlh.onrender.com/api/sync/schedule/${id}/time`, { newTime: formatted24h });
       setSchedule(schedule.map(slot => slot._id === id ? { ...slot, target_time: response.data.target_time } : slot));
@@ -199,56 +198,59 @@ const VisualDashboard = () => {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl text-slate-400">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-24 relative"> 
+    <div className="min-h-screen bg-[#F5F7FA] font-sans pb-24 relative"> 
       
-      {/* HEADER */}
-      <header className="bg-blue-600 text-white p-6 md:p-8 rounded-b-3xl shadow-lg relative z-20">
-        <div className="absolute top-6 right-6 flex bg-blue-700/50 rounded-lg p-1 border border-blue-500/50">
-          <button onClick={() => handleLanguageChange('en')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${appLang === 'en' ? 'bg-white text-blue-700' : 'text-blue-100 hover:text-white'}`}>EN</button>
-          <button onClick={() => handleLanguageChange('te')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${appLang === 'te' ? 'bg-white text-blue-700' : 'text-blue-100 hover:text-white'}`}>తె</button>
-          <button onClick={() => handleLanguageChange('hi')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${appLang === 'hi' ? 'bg-white text-blue-700' : 'text-blue-100 hover:text-white'}`}>हिं</button>
+      {/* 🌟 NEW SLEEK HEADER 🌟 */}
+      <header className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-6 md:p-8 rounded-b-[2.5rem] shadow-[0_10px_30px_rgba(79,70,229,0.2)] relative z-20 pb-12">
+        <div className="absolute top-6 right-6 flex bg-black/10 rounded-full p-1 border border-white/20 backdrop-blur-sm">
+          <button onClick={() => handleLanguageChange('en')} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${appLang === 'en' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-50 hover:text-white'}`}>EN</button>
+          <button onClick={() => handleLanguageChange('te')} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${appLang === 'te' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-50 hover:text-white'}`}>తె</button>
+          <button onClick={() => handleLanguageChange('hi')} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${appLang === 'hi' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-50 hover:text-white'}`}>हिं</button>
         </div>
-        <h1 className="text-3xl font-bold pr-20">{t.greeting}, {patientName.split(' ')[0]}!</h1>
-        <p className="text-blue-100 mt-1 text-lg">{t.hub}</p>
+        <h1 className="text-3xl font-black pr-24 tracking-tight">{t.greeting}, <br/>{patientName.split(' ')[0]}!</h1>
+        <p className="text-blue-100 mt-2 text-sm font-medium opacity-90">{t.hub}</p>
       </header>
 
-      {/* BUTTONS AREA (SOS & AI) */}
-      <div className="max-w-2xl mx-auto px-4 mt-[-15px] relative z-30 flex flex-col gap-3">
+      {/* 🌟 ACTION CARDS FLOATING OVER HEADER 🌟 */}
+      <div className="max-w-2xl mx-auto px-5 mt-[-2rem] relative z-30 flex flex-col gap-4">
         
-        {/* HUGE SOS BUTTON */}
+        {/* REFINED SOS BUTTON */}
         <button 
           onClick={handleSOS} 
           disabled={isSendingSOS}
-          className={`w-full py-4 px-6 rounded-2xl border-4 flex items-center justify-center gap-4 shadow-xl active:scale-95 transition-all ${isSendingSOS ? 'bg-red-400 border-red-500' : 'bg-red-600 border-red-700 hover:bg-red-500 animate-pulse'}`}
+          className={`w-full py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all duration-300 ${isSendingSOS ? 'bg-red-400 text-white' : 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-red-500/30 hover:shadow-red-500/50'}`}
         >
-          <span className="text-4xl">{isSendingSOS ? "📡" : "🚨"}</span>
-          <span className="text-2xl font-black text-white tracking-widest uppercase">
+          <span className="text-3xl drop-shadow-md">{isSendingSOS ? "📡" : "🚨"}</span>
+          <span className="text-xl font-black tracking-widest uppercase drop-shadow-md">
             {isSendingSOS ? "Calling..." : t.sos}
           </span>
         </button>
 
-        {/* 🌟 NEW AI ASSISTANT BUTTON 🌟 */}
+        {/* REFINED AI ASSISTANT BUTTON */}
         <button 
           onClick={() => setShowVoiceAssistant(true)} 
-          className="w-full py-3 px-6 rounded-xl border-2 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 flex items-center justify-center gap-3 shadow-md active:scale-95 transition-all"
+          className="w-full py-4 px-6 rounded-2xl bg-white border border-indigo-50 flex items-center justify-center gap-3 shadow-[0_8px_20px_rgba(0,0,0,0.04)] active:scale-95 transition-all group hover:border-indigo-100"
         >
-          <span className="text-2xl">🎙️</span>
-          <span className="text-lg font-bold text-indigo-700">Ask AI Voice Assistant</span>
+          <div className="bg-indigo-50 w-10 h-10 rounded-full flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+            <span className="text-xl">🎙️</span>
+          </div>
+          <span className="text-lg font-extrabold text-slate-700 group-hover:text-indigo-600 transition-colors">Ask AI Assistant</span>
         </button>
 
-        {/* LOW STOCK WARNINGS */}
+        {/* REFINED REFILL NOTIFICATION */}
         {lowStockAlerts.length > 0 && (
-          <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl shadow-lg p-4 mt-1 border-2 border-white">
-            <h3 className="text-white font-black text-lg tracking-wide shadow-sm flex items-center gap-2">
-              <span>⚠️</span> Refill Required
-            </h3>
-            <p className="text-red-50 font-medium mt-1 text-sm leading-tight">
-              Medicines finishing in 2-3 days. Please consult doctor.
+          <div className="bg-white rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.04)] p-5 border-l-4 border-orange-500">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-orange-500 text-xl">⚠️</span>
+              <h3 className="text-slate-800 font-bold text-base">Refill Required Soon</h3>
+            </div>
+            <p className="text-slate-500 text-sm font-medium leading-relaxed mb-3">
+              Medicines finishing in 2-3 days. Please consult your doctor.
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {lowStockAlerts.map((alert, i) => (
-                <span key={i} className="bg-white text-red-700 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-                  {alert.name}: {alert.stock} left
+                <span key={i} className="bg-orange-50 text-orange-700 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-orange-100">
+                  {alert.name} • {alert.stock} left
                 </span>
               ))}
             </div>
@@ -256,7 +258,7 @@ const VisualDashboard = () => {
         )}
       </div>
 
-      {/* 🌟 VOICE ASSISTANT MODAL 🌟 */}
+      {/* VOICE ASSISTANT MODAL */}
       {showVoiceAssistant && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
@@ -274,7 +276,7 @@ const VisualDashboard = () => {
               </button>
               
               <p className="mt-6 text-lg font-bold text-slate-700 text-center min-h-[28px]">
-                {transcript || "Tap the mic and say: 'I have a headache'"}
+                {transcript || (appLang === 'te' ? "మైక్ నొక్కి మాట్లాడండి" : appLang === 'hi' ? "माइक दबाएं और बोलें" : "Tap the mic and say: 'I have a fever'")}
               </p>
 
               {aiResponse && (
@@ -287,7 +289,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* MODALS */}
+      {/* OTHER MODALS... */}
       {showAddReminder && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm pt-20 overflow-y-auto">
           <div className="relative w-full max-w-md">
@@ -316,9 +318,9 @@ const VisualDashboard = () => {
               </div>
               <div className="flex gap-4 pt-2">
                 <button type="button" onClick={() => setShowSettings(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
-                <button type="submit" disabled={isSavingSettings} className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg">{isSavingSettings ? "Saving..." : "Save Config"}</button>
+                <button type="submit" disabled={isSavingSettings} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg">{isSavingSettings ? "Saving..." : "Save Config"}</button>
               </div>
-              <button type="button" onClick={handleLogout} className="w-full py-4 mt-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
+              <button type="button" onClick={handleLogout} className="w-full py-4 mt-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2">
                 <span className="text-xl">🚪</span> Secure Logout
               </button>
             </form>
@@ -326,66 +328,69 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* SCHEDULE LIST */}
-      <main className="p-4 mt-2 max-w-2xl mx-auto space-y-6">
-        <h2 className="text-xl font-black text-slate-800 px-2 tracking-wide uppercase">{t.schedule}</h2>
+      {/* REFINED SCHEDULE LIST */}
+      <main className="p-5 mt-2 max-w-2xl mx-auto space-y-5">
+        <h2 className="text-sm font-black text-slate-400 tracking-widest uppercase ml-1">{t.schedule}</h2>
         
         {schedule.length === 0 ? (
           <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-slate-100">
             <span className="text-4xl block mb-4">🎉</span>
-            <h2 className="text-xl font-bold text-slate-500">{t.noMeds}</h2>
+            <h2 className="text-lg font-bold text-slate-400">{t.noMeds}</h2>
           </div>
         ) : (
           schedule.map((slot) => {
             const isOutOfStock = (slot.medications || []).every(med => med.totalStock < med.qty);
 
             return (
-              <div key={slot._id} className={`bg-white rounded-3xl shadow-md overflow-hidden border-l-[8px] mb-4 ${slot.status === 'taken' ? 'border-green-500' : isOutOfStock ? 'border-red-500' : 'border-amber-400'}`}>
+              <div key={slot._id} className={`bg-white rounded-[1.5rem] shadow-[0_4px_15px_rgba(0,0,0,0.03)] overflow-hidden border border-slate-100 mb-5 relative`}>
                 
+                {/* Status Indicator Bar */}
+                <div className={`absolute left-0 top-0 bottom-0 w-2 ${slot.status === 'taken' ? 'bg-green-500' : isOutOfStock ? 'bg-red-500' : 'bg-amber-400'}`}></div>
+
                 {/* TIME HEADER */}
-                <div className="p-4 bg-slate-50 flex justify-between items-center border-b border-slate-100">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <div className="p-4 pl-6 bg-white flex justify-between items-center border-b border-slate-50">
+                  <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
                     {slot.time_slot === "Morning" ? "☀️" : slot.time_slot === "Afternoon" ? "🌤️" : "🌙"} {slot.time_slot}
                   </h2>
                   
                   {editingTimeId === slot._id ? (
-                    <div className="flex items-center bg-white p-1 rounded-lg shadow-inner border border-slate-200">
-                      <select value={editHour} onChange={e => setEditHour(e.target.value)} className="p-1 bg-transparent font-bold outline-none cursor-pointer">
+                    <div className="flex items-center bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                      <select value={editHour} onChange={e => setEditHour(e.target.value)} className="p-1 bg-transparent font-bold text-sm outline-none cursor-pointer">
                         {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
                       </select>
                       <span className="font-bold text-slate-400 mx-0.5">:</span>
-                      <select value={editMinute} onChange={e => setEditMinute(e.target.value)} className="p-1 bg-transparent font-bold outline-none cursor-pointer">
+                      <select value={editMinute} onChange={e => setEditMinute(e.target.value)} className="p-1 bg-transparent font-bold text-sm outline-none cursor-pointer">
                         {Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                       </select>
-                      <select value={editAmpm} onChange={e => setEditAmpm(e.target.value)} className="p-1 bg-transparent font-bold text-blue-600 outline-none cursor-pointer">
+                      <select value={editAmpm} onChange={e => setEditAmpm(e.target.value)} className="p-1 bg-transparent font-bold text-sm text-indigo-600 outline-none cursor-pointer">
                         <option value="AM">AM</option><option value="PM">PM</option>
                       </select>
                       <div className="flex gap-1 ml-2">
-                        <button onClick={() => saveCustomTime(slot._id)} className="bg-blue-600 text-white px-2 py-1 rounded font-bold text-xs">Save</button>
-                        <button onClick={() => setEditingTimeId(null)} className="bg-slate-200 text-slate-600 px-2 py-1 rounded font-bold text-xs">✕</button>
+                        <button onClick={() => saveCustomTime(slot._id)} className="bg-indigo-600 text-white px-2 py-1 rounded md font-bold text-xs">Save</button>
+                        <button onClick={() => setEditingTimeId(null)} className="bg-slate-200 text-slate-600 px-2 py-1 rounded-md font-bold text-xs">✕</button>
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => openTimeEditor(slot)} className="text-slate-600 font-bold hover:text-blue-600 bg-slate-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
+                    <button onClick={() => openTimeEditor(slot)} className="text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 bg-indigo-50/50">
                       {slot.target_time || "12:00 AM"} <span className="text-xs opacity-50">✏️</span>
                     </button>
                   )}
                 </div>
 
                 {/* PILLS */}
-                <div className="p-4 space-y-3">
+                <div className="p-4 pl-6 space-y-3">
                   {(slot.medications || []).map((med, idx) => (
-                    <div key={idx} className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-xl">
+                    <div key={idx} className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
                       {slot.photo ? (
-                        <img src={slot.photo} alt="Pill" className="w-16 h-16 object-cover rounded-lg shadow-sm border border-slate-200 shrink-0" />
+                        <img src={slot.photo} alt="Pill" className="w-14 h-14 object-cover rounded-xl shadow-sm border border-slate-200 shrink-0" />
                       ) : (
-                        <div className="w-16 h-16 bg-white rounded-lg shadow-sm flex items-center justify-center text-3xl shrink-0">💊</div>
+                        <div className="w-14 h-14 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-2xl shrink-0">💊</div>
                       )}
                       <div>
-                        <h3 className="text-lg font-bold text-slate-800 leading-tight">{med.name}</h3>
-                        <div className="mt-1 flex gap-2">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold">{med.qty} {t.pills}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${med.totalStock > 0 ? 'bg-slate-200 text-slate-600' : 'bg-red-100 text-red-600'}`}>Left: {med.totalStock}</span>
+                        <h3 className="text-base font-bold text-slate-800 leading-tight">{med.name}</h3>
+                        <div className="mt-1.5 flex gap-2">
+                          <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide">{med.qty} {t.pills}</span>
+                          <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide ${med.totalStock > 0 ? 'bg-slate-200 text-slate-600' : 'bg-red-100 text-red-600'}`}>Left: {med.totalStock}</span>
                         </div>
                       </div>
                     </div>
@@ -393,16 +398,20 @@ const VisualDashboard = () => {
                 </div>
 
                 {/* ACTION BUTTON */}
-                <div className="p-4 pt-0">
+                <div className="p-4 pl-6 pt-1">
                   {isOutOfStock ? (
-                    <div className="w-full py-3 text-center rounded-xl bg-red-100 border-2 border-red-200 text-red-700 font-bold uppercase tracking-wide">
+                    <div className="w-full py-3.5 text-center rounded-xl bg-red-50 border border-red-100 text-red-600 font-bold tracking-wide">
                       ❌ Out of Stock
                     </div>
                   ) : slot.status !== 'taken' ? (
-                    <button onClick={() => handleTakeMedicine(slot._id)} className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-md active:scale-95 transition-transform">
-                      {t.tookIt}
+                    <button onClick={() => handleTakeMedicine(slot._id)} className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-black text-white font-bold text-lg shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
+                      <span className="text-xl">✓</span> {t.tookIt}
                     </button>
-                  ) : null}
+                  ) : (
+                    <div className="w-full py-3.5 text-center rounded-xl bg-green-50 text-green-600 font-bold tracking-wide flex items-center justify-center gap-2">
+                      <span className="text-xl">✅</span> Medicine Taken
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -410,30 +419,30 @@ const VisualDashboard = () => {
         )}
       </main>
 
-      {/* BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 px-2 pb-safe">
-        <div className="flex justify-between items-center max-w-md mx-auto h-16">
-          <button onClick={() => setShowAddReminder(true)} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-blue-600 active:scale-90 transition-transform">
+      {/* SLEEK BOTTOM NAV */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] z-40 px-2 pb-safe">
+        <div className="flex justify-between items-center max-w-md mx-auto h-16 px-2">
+          <button onClick={() => setShowAddReminder(true)} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-indigo-600 active:scale-90 transition-transform">
             <span className="text-2xl">➕</span>
             <span className="text-[10px] font-bold">Add Med</span>
           </button>
           
-          <button onClick={() => navigate('/blood-network')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-red-500 active:scale-90 transition-transform">
+          <button onClick={() => navigate('/blood-network')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-rose-500 active:scale-90 transition-transform">
             <span className="text-2xl">🩸</span>
             <span className="text-[10px] font-bold">Blood</span>
           </button>
 
-          <button onClick={() => navigate('/family')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-indigo-500 active:scale-90 transition-transform">
+          <button onClick={() => navigate('/family')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-blue-500 active:scale-90 transition-transform">
             <span className="text-2xl">👨‍👩‍👧‍👦</span>
             <span className="text-[10px] font-bold">Family</span>
           </button>
 
-          <button onClick={() => navigate('/find-clinic')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-emerald-500 active:scale-90 transition-transform">
+          <button onClick={() => navigate('/find-clinic')} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-emerald-500 active:scale-90 transition-transform">
             <span className="text-2xl">🏥</span>
             <span className="text-[10px] font-bold">Clinic</span>
           </button>
 
-          <button onClick={() => setShowSettings(true)} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 active:scale-90 transition-transform">
+          <button onClick={() => setShowSettings(true)} className="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-slate-800 active:scale-90 transition-transform">
             <span className="text-2xl">⚙️</span>
             <span className="text-[10px] font-bold">Settings</span>
           </button>

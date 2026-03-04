@@ -1,22 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-// పర్యావరణంలో (environment) బయటి ఫైల్స్ సపోర్ట్ చేయనందున AddReminder ని ఇక్కడే మాక్ (mock) చేస్తున్నాను
-const AddReminder = ({ patientPhone, onSuccess }) => {
-  return (
-    <div className="p-8 md:p-10 bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl">
-      <div className="w-16 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
-      <h3 className="text-2xl md:text-3xl font-black text-slate-800 mb-3 tracking-tight">Add New Medicine</h3>
-      <p className="text-sm md:text-base text-slate-500 mb-8 font-medium leading-relaxed">This is a mock component for preview purposes. External imports are not allowed in this environment.</p>
-      <div className="flex justify-end gap-3">
-        <button onClick={onSuccess} className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/20">
-          Save Medicine
-        </button>
-      </div>
-    </div>
-  );
-};
+import AddReminder from '../../components/AddReminder'; 
 
 const translations = {
   en: { 
@@ -84,8 +69,9 @@ const VisualDashboard = () => {
   const [appLang, setAppLang] = useState(localStorage.getItem('appLang') || 'en');
   const t = translations[appLang] || translations['en'];
   
-  const patientPhone = localStorage.getItem('patientPhone') || '1234567890';
-  const patientName = localStorage.getItem('patientName') || 'Guest User';
+  // Restored original authentication logic
+  const patientPhone = localStorage.getItem('patientPhone');
+  const patientName = localStorage.getItem('patientName') || 'User';
 
   useEffect(() => {
     if (!patientPhone) { navigate('/'); return; }
@@ -349,9 +335,9 @@ const VisualDashboard = () => {
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-indigo-50 font-sans pb-32 relative selection:bg-indigo-200 overflow-x-hidden"> 
       
       {/* Decorative Orbs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-blob"></div>
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-cyan-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-32 left-20 w-[600px] h-[600px] bg-purple-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-50 animate-blob animation-delay-4000"></div>
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-[pulse_10s_ease-in-out_infinite]"></div>
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-cyan-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-[pulse_12s_ease-in-out_infinite] animation-delay-2000"></div>
+      <div className="absolute -bottom-32 left-20 w-[600px] h-[600px] bg-purple-300/20 rounded-full mix-blend-multiply filter blur-[80px] opacity-50 animate-[pulse_15s_ease-in-out_infinite] animation-delay-4000"></div>
 
       {/* Modern Glass Header */}
       <header className="relative z-20 px-6 pt-12 pb-8 md:p-14 md:pb-12 max-w-7xl mx-auto md:mt-6 backdrop-blur-3xl bg-white/40 border border-white/60 md:rounded-[3rem] rounded-b-[3rem] shadow-[0_8px_32px_rgba(31,38,135,0.05)]">
@@ -374,13 +360,13 @@ const VisualDashboard = () => {
 
       {/* Floating Action Cards */}
       <div className="max-w-5xl mx-auto px-5 mt-[-2.5rem] md:mt-[-3.5rem] relative z-30 flex flex-col md:flex-row gap-4 md:gap-6">
-        <button onClick={handleSOS} disabled={isSendingSOS} className={`group flex-1 py-5 md:py-8 px-6 rounded-[2rem] flex items-center justify-center gap-4 shadow-2xl active:scale-[0.98] hover:-translate-y-1.5 transition-all duration-400 overflow-hidden relative ${isSendingSOS ? 'bg-red-400 text-white' : 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-rose-500/30'}`}>
+        <button onClick={handleSOS} disabled={isSendingSOS} className={`group flex-1 py-5 md:py-8 px-6 rounded-[2rem] flex items-center justify-center gap-4 shadow-2xl active:scale-[0.98] hover:-translate-y-1.5 transition-all duration-300 overflow-hidden relative ${isSendingSOS ? 'bg-red-400 text-white' : 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-rose-500/30'}`}>
           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></div>
           <span className="text-4xl md:text-5xl drop-shadow-lg relative z-10 group-hover:scale-110 transition-transform duration-300">{isSendingSOS ? "📡" : "🚨"}</span>
           <span className="text-xl md:text-2xl font-black tracking-widest uppercase drop-shadow-md relative z-10">{isSendingSOS ? t.calling : t.sos}</span>
         </button>
 
-        <button onClick={() => setShowVoiceAssistant(true)} className="group flex-1 py-5 md:py-8 px-6 rounded-[2rem] bg-white/70 backdrop-blur-xl border border-white/80 flex items-center justify-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(79,70,229,0.1)] active:scale-[0.98] hover:-translate-y-1.5 transition-all duration-400 relative overflow-hidden">
+        <button onClick={() => setShowVoiceAssistant(true)} className="group flex-1 py-5 md:py-8 px-6 rounded-[2rem] bg-white/70 backdrop-blur-xl border border-white/80 flex items-center justify-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(79,70,229,0.1)] active:scale-[0.98] hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 relative z-10">
             <span className="text-xl md:text-2xl text-white">🎙️</span>
@@ -389,10 +375,10 @@ const VisualDashboard = () => {
         </button>
       </div>
 
-      {/* AI Voice Assistant Modal - Soft Glass UI */}
+      {/* AI Voice Assistant Modal */}
       {showVoiceAssistant && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-end md:items-center justify-center p-0 md:p-6 backdrop-blur-md transition-all">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-t-[2.5rem] md:rounded-[3rem] border border-white shadow-2xl w-full max-w-xl overflow-hidden animate-[slide-up_0.4s_cubic-bezier(0.16,1,0.3,1)] flex flex-col max-h-[90vh]">
+          <div className="bg-white/90 backdrop-blur-3xl rounded-t-[2.5rem] md:rounded-[3rem] border border-white shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 md:p-8 pb-0 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xl shadow-inner">✨</div>
@@ -464,7 +450,7 @@ const VisualDashboard = () => {
       {/* Add Reminder Modal */}
       {showAddReminder && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
-          <div className="relative w-full max-w-xl animate-[slide-up_0.3s_cubic-bezier(0.16,1,0.3,1)]">
+          <div className="relative w-full max-w-xl">
             <button onClick={() => setShowAddReminder(false)} className="absolute -top-5 -right-5 z-50 bg-slate-900 hover:bg-slate-800 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold shadow-xl transition-transform hover:scale-110 border-4 border-white">✕</button>
             <AddReminder patientPhone={patientPhone} onSuccess={() => { setShowAddReminder(false); fetchSchedule(); }} />
           </div>
@@ -474,7 +460,7 @@ const VisualDashboard = () => {
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
-          <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl p-8 md:p-10 max-w-xl w-full animate-[slide-up_0.3s_cubic-bezier(0.16,1,0.3,1)]">
+          <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl p-8 md:p-10 max-w-xl w-full">
             <div className="w-16 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
             <h2 className="text-3xl font-black text-slate-800 mb-6 tracking-tight">{t.settings}</h2>
             <form onSubmit={saveSettings} className="space-y-6">
@@ -502,7 +488,7 @@ const VisualDashboard = () => {
         </div>
       )}
 
-      {/* Schedule Section - Premium Glass Cards */}
+      {/* Schedule Section */}
       <main className="p-5 md:p-8 mt-4 md:mt-8 max-w-7xl mx-auto relative z-20">
         <div className="flex items-center gap-4 mb-6 md:mb-8 ml-2">
           <div className="w-2 h-8 bg-indigo-500 rounded-full"></div>
@@ -522,7 +508,6 @@ const VisualDashboard = () => {
               const localizedTimeSlot = slot.time_slot === "Morning" ? t.morning : slot.time_slot === "Afternoon" ? t.afternoon : t.night;
               const timeIcon = slot.time_slot === "Morning" ? "☀️" : slot.time_slot === "Afternoon" ? "🌤️" : "🌙";
               
-              // Dynamic Backgrounds for Time of Day
               const bgClass = slot.time_slot === "Morning" ? "bg-amber-50/30" : slot.time_slot === "Afternoon" ? "bg-orange-50/30" : "bg-indigo-50/30";
 
               return (
@@ -662,12 +647,4 @@ const VisualDashboard = () => {
   );
 };
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/*" element={<VisualDashboard />} />
-      </Routes>
-    </Router>
-  );
-}
+export default VisualDashboard;

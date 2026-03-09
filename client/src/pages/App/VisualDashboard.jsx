@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AddReminder from '../../components/AddReminder'; 
@@ -78,9 +78,36 @@ const VisualDashboard = () => {
     fetchSchedule();
   }, [patientPhone, navigate]);
 
+  // local reminder checker runs every 30 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const strTime = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')} ${ampm}`;
+
+      schedule.forEach(slot => {
+        if (slot.target_time === strTime && slot.status !== 'taken') {
+          alert(`🔔 REMINDER: It is time to take your ${slot.time_slot} medications!`);
+        }
+      });
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [schedule]);
+
   const handleLanguageChange = (langCode) => {
     setAppLang(langCode);
     localStorage.setItem('appLang', langCode);
+  };
+
+  // navigation helper that also closes any open modals
+  const closeAllModalsAndNavigate = (path) => {
+    setShowAddReminder(false);
+    setShowSettings(false);
+    setShowVoiceAssistant(false);
+    navigate(path);
   };
 
   const fetchSchedule = async () => {
@@ -449,7 +476,7 @@ const VisualDashboard = () => {
 
       {/* Add Reminder Modal */}
       {showAddReminder && (
-        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
+        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-start justify-center p-4 pt-10 pb-32 overflow-y-auto backdrop-blur-md transition-all">
           <div className="relative w-full max-w-xl">
             <button onClick={() => setShowAddReminder(false)} className="absolute -top-5 -right-5 z-50 bg-slate-900 hover:bg-slate-800 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold shadow-xl transition-transform hover:scale-110 border-4 border-white">✕</button>
             <AddReminder patientPhone={patientPhone} onSuccess={() => { setShowAddReminder(false); fetchSchedule(); }} />
@@ -459,7 +486,7 @@ const VisualDashboard = () => {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-md transition-all">
+        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-start justify-center p-4 pt-10 pb-32 overflow-y-auto backdrop-blur-md transition-all">
           <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl p-8 md:p-10 max-w-xl w-full">
             <div className="w-16 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
             <h2 className="text-3xl font-black text-slate-800 mb-6 tracking-tight">{t.settings}</h2>
@@ -608,7 +635,7 @@ const VisualDashboard = () => {
             <span className="text-[10px] font-bold md:hidden group-hover:text-slate-800">{t.navAddMed}</span>
           </button>
           
-          <button onClick={() => navigate('/blood-network')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-rose-500 active:scale-95 hover:bg-rose-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
+          <button onClick={() => closeAllModalsAndNavigate('/blood-network')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-rose-500 active:scale-95 hover:bg-rose-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
             <span className="text-2xl md:text-3xl group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-sm">🩸</span>
             <span className="text-[10px] font-bold tracking-wide opacity-0 group-hover:opacity-100 absolute bottom-1 md:-bottom-6 md:bg-rose-600 md:text-white md:px-3 md:py-1.5 md:rounded-lg md:shadow-lg transition-all duration-300 whitespace-nowrap pointer-events-none md:scale-90 group-hover:scale-100 hidden md:block">
               {t.navBlood}
@@ -616,7 +643,7 @@ const VisualDashboard = () => {
             <span className="text-[10px] font-bold md:hidden group-hover:text-rose-500">{t.navBlood}</span>
           </button>
 
-          <button onClick={() => navigate('/family')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-blue-500 active:scale-95 hover:bg-blue-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
+          <button onClick={() => closeAllModalsAndNavigate('/family')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-blue-500 active:scale-95 hover:bg-blue-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
             <span className="text-2xl md:text-3xl group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-sm">👨‍👩‍👧‍👦</span>
             <span className="text-[10px] font-bold tracking-wide opacity-0 group-hover:opacity-100 absolute bottom-1 md:-bottom-6 md:bg-blue-600 md:text-white md:px-3 md:py-1.5 md:rounded-lg md:shadow-lg transition-all duration-300 whitespace-nowrap pointer-events-none md:scale-90 group-hover:scale-100 hidden md:block">
               {t.navFamily}
@@ -624,7 +651,7 @@ const VisualDashboard = () => {
             <span className="text-[10px] font-bold md:hidden group-hover:text-blue-500">{t.navFamily}</span>
           </button>
 
-          <button onClick={() => navigate('/find-clinic')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-emerald-500 active:scale-95 hover:bg-emerald-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
+          <button onClick={() => closeAllModalsAndNavigate('/find-clinic')} className="flex-1 md:flex-none md:w-[4.5rem] md:h-[4.5rem] py-3 md:py-0 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-emerald-500 active:scale-95 hover:bg-emerald-50/80 rounded-[1.5rem] md:rounded-full transition-all group relative">
             <span className="text-2xl md:text-3xl group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-sm">🏥</span>
             <span className="text-[10px] font-bold tracking-wide opacity-0 group-hover:opacity-100 absolute bottom-1 md:-bottom-6 md:bg-emerald-600 md:text-white md:px-3 md:py-1.5 md:rounded-lg md:shadow-lg transition-all duration-300 whitespace-nowrap pointer-events-none md:scale-90 group-hover:scale-100 hidden md:block">
               {t.navClinic}

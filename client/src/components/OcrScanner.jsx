@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Tesseract from 'tesseract.js';
 
 const OcrScanner = ({ onScanComplete }) => {
   const [isScanning, setIsScanning] = useState(false);
@@ -45,8 +46,8 @@ const OcrScanner = ({ onScanComplete }) => {
     setIsScanning(true);
     setProgress(0);
 
-    // Using the global Tesseract from your index.html
-    window.Tesseract.recognize(
+    // call the imported Tesseract module instead of a global
+    Tesseract.recognize(
       file,
       'eng',
       {

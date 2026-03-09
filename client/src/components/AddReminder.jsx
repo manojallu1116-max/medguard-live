@@ -7,6 +7,7 @@ const AddReminder = ({ patientPhone, onSuccess }) => {
   const [timeSlot, setTimeSlot] = useState('Morning');
   const [quantity, setQuantity] = useState('1 Tablet');
   const [totalStock, setTotalStock] = useState('15'); // 🌟 The Inventory State
+  const [nextVisitDate, setNextVisitDate] = useState(''); // 🌟 optional expiry/receipt date
   const [photoBase64, setPhotoBase64] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -83,10 +84,12 @@ const AddReminder = ({ patientPhone, onSuccess }) => {
         timeSlot,
         quantity,
         totalStock, // 🌟 Passing it to the backend
+        nextVisitDate, // 🌟 optional date so reminders can respect expiry
         photo: photoBase64 
       });
       setMedicineName('');
       setPhotoBase64('');
+      setNextVisitDate('');
       if (onSuccess) onSuccess(); 
     } catch (error) {
       console.error(error);
@@ -153,6 +156,11 @@ const AddReminder = ({ patientPhone, onSuccess }) => {
         <div>
           <label className="block text-sm font-bold text-orange-600 mb-1">Total Pills in Packet/Box</label>
           <input type="number" value={totalStock} onChange={(e) => setTotalStock(e.target.value)} min="1" className="w-full p-3 border-2 border-orange-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-bold bg-orange-50" required />
+        </div>
+        {/* 🌟 NEW: optional consult/expiry date like POS uses */}
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1">Expiry/Consult Date (optional)</label>
+          <input type="date" value={nextVisitDate} onChange={e => setNextVisitDate(e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
         </div>
 
         <button type="submit" disabled={isSubmitting} className="w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 shadow-lg mt-4 transition-transform active:scale-95">

@@ -116,10 +116,11 @@ export const updateScheduleTime = async (req, res) => {
 
 export const addManualReminder = async (req, res) => {
   try {
-    const { phone, medicineName, timeSlot, quantity, totalStock, photo } = req.body;
+    const { phone, medicineName, timeSlot, quantity, totalStock, photo, nextVisitDate } = req.body;
 
-    let target_time = "09:00 AM";
-    if (timeSlot === "Afternoon") target_time = "01:00 PM";
+    // use same hardcoded schedule times as the POS endpoint so reminders fire when users expect
+    let target_time = "08:00 AM";
+    if (timeSlot === "Afternoon") target_time = "02:00 PM";
     if (timeSlot === "Night") target_time = "08:00 PM";
 
     const parsedQty = parseInt(quantity) || 1; 
@@ -131,6 +132,9 @@ export const addManualReminder = async (req, res) => {
       finalPhoto = "https://images.unsplash.com/photo-1584308666744-24d5e478acba?auto=format&fit=crop&w=400&q=80";
     }
 
+    // convert provided date string to Date object if present
+    const visitDateObj = nextVisitDate ? new Date(nextVisitDate) : null;
+
     const newSchedule = new Schedule({
       patientPhone: phone,
       shopId: fallbackShopId,               
@@ -139,7 +143,8 @@ export const addManualReminder = async (req, res) => {
       status: 'pending',
       alertLevel: 0,
       medications: [{ name: medicineName, qty: parsedQty, totalStock: parsedStock, isContinuous: false }], 
-      photo: finalPhoto 
+      photo: finalPhoto,
+      nextVisitDate: visitDateObj
     });
 
     await newSchedule.save();
